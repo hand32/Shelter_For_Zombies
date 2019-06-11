@@ -6,7 +6,7 @@
 
 #include <gl/glew.h>
 #include <gl/gl.h>
-#include <gl/glut.h>
+#include <gl/freeglut.h>
 #include <cstdlib>
 #include <cmath>
 #include <cstdio>
@@ -49,6 +49,7 @@ public:
 	CGLSLProgram m_Glsl[3];
 	GLuint m_VaoHandle;
 	glm::mat4 m_ProjectionMatrix;
+	glm::vec4 m_projectionNums;
 	glm::mat4 m_View;
 
 	LightInfo m_worldLight;
@@ -74,6 +75,7 @@ public:
 	static void SpecialInputStatic(int key, int x, int y);
 	static void ResizeStatic(int width, int height);
 	static void MouseStatic(int button, int state, int x, int y);
+	static void MouseWheelStatic(int button, int state, int x, int y);
 	static void ShutdownAppStatic();
 
 	void Create(int arg, char **argc, float *fBgColor, double (*dLookAt)[3], bool bVSync);
@@ -83,6 +85,7 @@ public:
 	void SpecialInput(int key, int x, int y);
 	void Resize(int width, int height);
 	void Mouse(int button, int state, int x, int y);
+	void MouseWheel(int button, int state, int x, int y);
 
 	bool InitializeApp();
 	void ShutdownApp();

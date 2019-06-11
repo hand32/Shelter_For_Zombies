@@ -10,6 +10,9 @@ float GetPointDistance(glm::vec3 p1, glm::vec3 p2);
 CObject::CObject()
 {
 	material.shininess = 50.f;
+	material.specular[0] = 1.0f;
+	material.specular[1] = 1.0f;
+	material.specular[2] = 1.0f;
 
 	m_gravity_on = true;
 	m_gravity_scale = 9.8f;

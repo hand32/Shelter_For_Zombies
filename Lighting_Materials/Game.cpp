@@ -8,6 +8,14 @@
 #include "LoadObj.h"
 #include "Bmp.h"
 
+enum
+{
+	MOUSE_LEFT_BUTTON = 0,
+	MOUSE_MIDDLE_BUTTON = 1,
+	MOUSE_RIGHT_BUTTON = 2,
+	MOUSE_SCROLL_UP = 3,
+	MOUSE_SCROLL_DOWN = 4
+};
 CGame::CGame(int nW, int nH, int nPosX, int nPosY)
 {
 	m_nW = nW;
@@ -49,12 +57,14 @@ void CGame::Create(int arg, char **argc, float *fBgColor, double (*dLookAt)[3], 
 	m_nBaseTime = glutGet(GLUT_ELAPSED_TIME); 
 	m_nPreviousTime = m_nBaseTime;
 	m_nCurrentTime = 0;
+	m_projectionNums = glm::vec4(-24.f, 24.f, -18.f, 18.f);
 
 	glutDisplayFunc(RenderSceneStatic);
 	glutReshapeFunc(ResizeStatic);
 	glutKeyboardFunc(KeyDownStatic);
 	glutSpecialFunc(SpecialInputStatic);
 	glutMouseFunc(MouseStatic);
+	glutMouseWheelFunc(MouseWheelStatic);
 
 	atexit(ShutdownAppStatic);
 
@@ -71,23 +81,15 @@ void CGame::Create(int arg, char **argc, float *fBgColor, double (*dLookAt)[3], 
 			m_dLookAt[r][c] = dLookAt[r][c];
 
 	m_select_Object = NULL;
-	CSphere *newSphere = new CSphere();
-	newSphere->SetPosition(10.0f, 1.5f, 0.0f);
-	newSphere->SetRadius(0.5f);
-	newSphere->m_gravity_on = false;
-
 	CCube *newCube = new CCube();
-	newCube->SetPosition(13.0f, 1.5f, 0.0f);
-	newCube->SetScale(1.0f, 1.0f, 1.0f);
-	newCube->SetColor(1.0f, 0.0f, 0.0f);
-	newSphere->m_gravity_on = false;
-
-	newCube = new CCube();
-	newCube->SetPosition(0.0f, 0.0f, 0.0f);
-	newCube->SetScale(50.0f, 2.0f, 50.0f);
-	newCube->SetColor(0.8f, 0.2f, 1.0f);;
+	newCube->SetPosition(2.0f, 0.0f, 2.0f);
+	newCube->SetScale(45.0f, 2.0f, 45.0f);
+	newCube->SetColor(1.0f, 1.0f, 1.0f);;
 	newCube->m_gravity_on = false;
-	newCube->material.shininess = 10000.0f;
+	newCube->material.specular[0] = 0.1f;
+	newCube->material.specular[1] = 0.1f;
+	newCube->material.specular[2] = 0.1f;
+	newCube->material.shininess = 20000.0f;
 	newCube->m_state = GROUND;
 
 	MakeBrick();
@@ -124,12 +126,13 @@ void CGame::RenderScene()
 	m_nPreviousTime = m_nBaseTime;
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
+	//glMatrixMode(GL_MODELVIEW);
 
-	gluLookAt(m_dLookAt[0][0], m_dLookAt[0][1], m_dLookAt[0][2],
-		m_dLookAt[1][0], m_dLookAt[1][1], m_dLookAt[1][2],
-		m_dLookAt[2][0], m_dLookAt[2][1], m_dLookAt[2][2]);
+	m_View = glm::lookAt(glm::vec3(m_dLookAt[0][0], m_dLookAt[0][1], m_dLookAt[0][2]),
+		glm::vec3(m_dLookAt[1][0], m_dLookAt[1][1], m_dLookAt[1][2]),
+		glm::vec3(m_dLookAt[2][0], m_dLookAt[2][1], m_dLookAt[2][2]));
+	//glLoadIdentity();
+	m_ProjectionMatrix = glm::ortho(m_projectionNums.x, m_projectionNums.y, m_projectionNums.z, m_projectionNums.w, 0.1f, 60.0f);
 	
 	
 	m_worldLight.Position = glm::vec4(50.0 * cos(m_nCurrentTime / 800.0), 30.0, 50.0 * sin(m_nCurrentTime / 800.0), 1.0);
@@ -250,18 +253,36 @@ void CGame::SpecialInput(int key, int x, int y)
 void CGame::Resize(int width, int height)
 {
 	glViewport(0, 0, width, height);
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(-24, 24, -18, 18, 0.1f, 60.0f);
+	//glMatrixMode(GL_PROJECTION);
+	//glLoadIdentity();
+	//glOrtho(-24, 24, -18, 18, 0.1f, 60.0f);
 	//gluPerspective(60, (double)width / (double)height, 0.1, 80.0);
-	m_ProjectionMatrix = glm::ortho(-24.f, 24.f, -18.f, 18.f, 0.1f, 60.0f);
+	//m_ProjectionMatrix = glm::ortho(m_projectionNums.x, m_projectionNums.y, m_projectionNums.z, m_projectionNums.w, 0.1f, 65.0f);
 }
 
 void CGame::Mouse(int button, int state, int x, int y)
 {
-	if(button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+}
+
+void CGame::MouseWheel(int button, int state, int x, int y)
+{
+	if (state == 1)
 	{
-		
+		m_dLookAt[0][1] -= 0.5f;
+		glm::vec2 normalized = glm::normalize(glm::vec2(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT)));
+		m_projectionNums.x += normalized.x;
+		m_projectionNums.y -= normalized.x;
+		m_projectionNums.z += normalized.y;
+		m_projectionNums.w -= normalized.y;
+	}
+	else if (state == -1)
+	{
+		m_dLookAt[0][1] += 0.5f;
+		glm::vec2 normalized = glm::normalize(glm::vec2(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT)));
+		m_projectionNums.x -= normalized.x;
+		m_projectionNums.y += normalized.x;
+		m_projectionNums.z -= normalized.y;
+		m_projectionNums.w += normalized.y;
 	}
 }
 
@@ -303,7 +324,7 @@ bool CGame::InitializeApp()
 	int nStack = 30, nSlice = 30;
 	double sliceStep = 2 * PI / nSlice;
 	double stackStep = PI / nStack;
-	double radius = 0.5f;
+	float radius = 0.5f;
 
 	int m_nFaceNum = nStack * nSlice * 2;
 

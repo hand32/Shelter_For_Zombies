@@ -54,7 +54,7 @@ void CCube::Render()
 	m_Glsl->Uniform3f("Light.Ld", worldlight.Ld[0], worldlight.Ld[1], worldlight.Ld[2]);
 	m_Glsl->Uniform3f("Material.Ka", m_fColor[0], m_fColor[1], m_fColor[2]);
 	m_Glsl->Uniform3f("Light.La", worldlight.La[0], worldlight.La[1], worldlight.La[2]);
-	m_Glsl->Uniform3f("Material.Ks", m_fColor[0], m_fColor[1], m_fColor[2]);
+	m_Glsl->Uniform3f("Material.Ks", material.specular[0], material.specular[1], material.specular[2]);
 	m_Glsl->Uniform3f("Light.Ls", worldlight.Ls[0], worldlight.Ls[1], worldlight.Ls[2]);
 	m_Glsl->Uniform1f("Material.Shininess", material.shininess);
 

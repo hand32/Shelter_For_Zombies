@@ -133,6 +133,12 @@ void CGame::MouseStatic(int button, int state, int x, int y)
 		pInstance->Mouse(button, state, x, y);
 }
 
+void CGame::MouseWheelStatic(int button, int state, int x, int y)
+{
+	if (pInstance)
+		pInstance->MouseWheel(button, state, x, y);
+}
+
 void CGame::ShutdownAppStatic()
 {
 	if(pInstance)

@@ -38,9 +38,7 @@ void CSphere::Render()
 	m_dLookAt = CGame::pInstance->m_dLookAt;
 
 	glm::mat4 m_ProjectionMatrix = CGame::pInstance->m_ProjectionMatrix;
-	glm::mat4 m_View = glm::lookAt(glm::vec3(m_dLookAt[0][0], m_dLookAt[0][1], m_dLookAt[0][2]),
-		glm::vec3(m_dLookAt[1][0], m_dLookAt[1][1], m_dLookAt[1][2]),
-		glm::vec3(m_dLookAt[2][0], m_dLookAt[2][1], m_dLookAt[2][2]));
+	glm::mat4 m_View = CGame::pInstance->m_View;
 
 	glm::mat4 Model = glm::mat4(1.0f);
 	glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(m_fScale[0] * m_dRadius * 2, m_fScale[1] * m_dRadius * 2, m_fScale[2] * m_dRadius * 2));
@@ -67,7 +65,7 @@ void CSphere::Render()
 	m_Glsl->Uniform3f("Light.Ld", worldlight.Ld[0], worldlight.Ld[1], worldlight.Ld[2]);
 	m_Glsl->Uniform3f("Material.Ka", m_fColor[0], m_fColor[1], m_fColor[2]);
 	m_Glsl->Uniform3f("Light.La", worldlight.La[0], worldlight.La[1], worldlight.La[2]);
-	m_Glsl->Uniform3f("Material.Ks", m_fColor[0], m_fColor[1], m_fColor[2]);
+	m_Glsl->Uniform3f("Material.Ks", material.specular[0], material.specular[1], material.specular[2]);
 	m_Glsl->Uniform3f("Light.Ls", worldlight.Ls[0], worldlight.Ls[1], worldlight.Ls[2]);
 	m_Glsl->Uniform1f("Material.Shininess", material.shininess);
 

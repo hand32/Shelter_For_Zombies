@@ -7,7 +7,7 @@ int main(int arg, char **argc)
 	CGame game(640, 480, 100, 100);
 	
 	float fBgColor[4] = {0.9f, 1.0f, 0.9f};
-	double dLookAt[3][3] = {{22, 22, 22}, {0, 0, 0}, {0, 1, 0}};
+	double dLookAt[3][3] = {{22, 18, 22}, {0, 0, 0}, {0, 1, 0}};
 	//ortho 22 22 22
 	//perspective 22, 30, 22
 

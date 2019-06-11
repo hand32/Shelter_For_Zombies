@@ -6,7 +6,7 @@
 
 #include <gl/glew.h>
 #include <gl/gl.h>
-#include <gl/glut.h>
+#include <gl/freeglut.h>
 
 enum GLSLShaderType {
 	GAME_GL_VERTEX = GL_VERTEX_SHADER,
