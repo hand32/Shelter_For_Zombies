@@ -148,8 +148,10 @@ void CGame::RenderScene()
 				if (m_Objects[i]->Collide(m_Objects[j]) == true)
 				{
 					m_Objects[i]->m_gravity_on = false;
+					m_Objects[j]->m_gravity_on = false;
 					m_Objects[i]->SetVelocity(0.0f, 0.0f, 0.0f);
-					if (m_Objects[i] == m_select_Object)
+					m_Objects[j]->SetVelocity(0.0f, 0.0f, 0.0f);
+					if (m_Objects[i] == m_select_Object || m_Objects[j] == m_select_Object)
 						makeBrick = true;
 					break;
 				}

@@ -179,7 +179,7 @@ bool Sphere_Sphere_Collide(CSphere *sphere1, CSphere *sphere2)
 			glm::vec3 normalized = glm::normalize(glm::vec3(sphere1->m_fVelocity[0], sphere1->m_fVelocity[1], sphere1->m_fVelocity[2]));
 			glm::vec3 s1p = glm::vec3(sphere1->m_fPosition[0], sphere1->m_fPosition[1], sphere1->m_fPosition[2]);
 			glm::vec3 s2p = glm::vec3(sphere2->m_fPosition[0], sphere2->m_fPosition[1], sphere2->m_fPosition[2]);
-			while(sphere1->m_dRadius + sphere2->m_dRadius - distance > 0.01f)
+			while(sphere1->m_dRadius + sphere2->m_dRadius - distance > -0.01f)
 			{
 				s1p -= normalized * 0.01f;
 				distance = GetPointDistance(s1p, s2p);
@@ -236,7 +236,7 @@ bool Sphere_Cube_Collide(CSphere *sphere, CCube *cube)
 			glm::vec3 normalized = glm::normalize(glm::vec3(sphere->m_fVelocity[0], sphere->m_fVelocity[1], sphere->m_fVelocity[2]));
 			glm::vec3 sp = glm::vec3(sphere->m_fPosition[0], sphere->m_fPosition[1], sphere->m_fPosition[2]);
 			glm::vec3 bp = glm::vec3(box_point[0], box_point[1], box_point[2]);
-			while (sphere->m_dRadius - distance > 0.01f)
+			while (sphere->m_dRadius - distance > -0.01f)
 			{
 				sp -= normalized * 0.01f;
 				distance = GetPointDistance(sp, bp);
@@ -249,7 +249,7 @@ bool Sphere_Cube_Collide(CSphere *sphere, CCube *cube)
 			glm::vec3 normalized = glm::normalize(glm::vec3(cube->m_fVelocity[0], cube->m_fVelocity[1], cube->m_fVelocity[2]));
 			glm::vec3 sp = glm::vec3(sphere->m_fPosition[0], sphere->m_fPosition[1], sphere->m_fPosition[2]);
 			glm::vec3 cp = glm::vec3(box_point[0], box_point[1], box_point[2]);
-			while (sphere->m_dRadius - distance > 0.01f)
+			while (sphere->m_dRadius - distance > -0.01f)
 			{
 				distance = GetPointDistance(sp, cp);
 				cube->Translate(-normalized.x * 0.01f, -normalized.y * 0.01f, -normalized.z * 0.01f);
@@ -270,6 +270,21 @@ bool Cube_Cube_Collide(CCube *cube1, CCube *cube2)
 	if (x_d <= cube1->m_fScale[0] * 0.5f + cube2->m_fScale[0] * 0.5f &&
 		y_d <= cube1->m_fScale[1] * 0.5f + cube2->m_fScale[1] * 0.5f &&
 		z_d <= cube1->m_fScale[2] * 0.5f + cube2->m_fScale[2] * 0.5f)
+	{
+		if (cube1->m_fVelocity[0] != 0 || cube1->m_fVelocity[1] != 0 || cube1->m_fVelocity[2] != 0)
+		{
+			glm::vec3 normalized = glm::normalize(glm::vec3(cube1->m_fVelocity[0], cube1->m_fVelocity[1], cube1->m_fVelocity[2]));
+			while (cube1->m_fScale[0] * 0.5f + cube2->m_fScale[0] * 0.5f - x_d > -0.01f &&
+				cube1->m_fScale[1] * 0.5f + cube2->m_fScale[1] * 0.5f - y_d > -0.01f &&
+				cube1->m_fScale[2] * 0.5f + cube2->m_fScale[2] * 0.5f - z_d > -0.01f)
+			{
+				cube1->Translate(-normalized.x * 0.01f, -normalized.y * 0.01f, -normalized.z * 0.01f);
+				x_d = abs(cube1->m_fPosition[0] - cube2->m_fPosition[0]);
+				y_d = abs(cube1->m_fPosition[1] - cube2->m_fPosition[1]);
+				z_d = abs(cube1->m_fPosition[2] - cube2->m_fPosition[2]);
+			}
+		}
 		return true;
+	}
 	return false;
 }
