@@ -8,9 +8,6 @@ class CSphere : public CObject
 public:
 	double m_dRadius;
 
-	GLUquadric *m_Quad;
-	int m_nSlice, m_nStack;
-
 	CSphere();
 	CSphere(float *fPosition, float *fScale, float *fColor, float *fVelocity, double dRadius);
 	~CSphere();

@@ -89,6 +89,7 @@ void CGame::Create(int arg, char **argc, float *fBgColor, double (*dLookAt)[3], 
 	newCube->SetScale(50.0f, 2.0f, 50.0f);
 	newCube->SetColor(0.8f, 0.2f, 1.0f);;
 	newCube->m_gravity_on = false;
+	newCube->material.shininess = 10000.0f;
 	newCube->m_state = GROUND;
 
 	MakeBrick();
@@ -142,16 +143,17 @@ void CGame::RenderScene()
 	{
 		for (int j = 0; j < m_Objects_num; j++)
 		{
-			if (i != j && m_Objects[i]->Collide(m_Objects[j]) == true)
+			if (i != j && m_Objects[i]->m_type != MAN &&
+				m_Objects[i]->m_state != CONTROL)
 			{
-				if (m_Objects[i]->m_type != MAN)
+				if (m_Objects[i]->Collide(m_Objects[j]) == true)
 				{
 					m_Objects[i]->m_gravity_on = false;
 					m_Objects[i]->SetVelocity(0.0f, 0.0f, 0.0f);
 					if (m_Objects[i] == m_select_Object)
 						MakeBrick();
+					break;
 				}
-				break;
 			}
 		}
 		m_Objects[i]->Gravity(nElapsedTime);
@@ -178,6 +180,7 @@ void CGame::KeyDown(unsigned char key, int x, int y)
 		if (m_select_Object != NULL)
 		{
 			m_select_Object->m_gravity_on = true;
+			m_select_Object->m_state = BUILDING;
 		}
 		break;
 
@@ -449,7 +452,7 @@ CObject* CGame::MakeBrick()
 	CMan* man;
 	int ran = rand() % 2;
 
-	switch (ran)
+	switch (SPHERE)
 	{
 	case SPHERE:
 		brick = new CSphere();
@@ -466,7 +469,7 @@ CObject* CGame::MakeBrick()
 	brick->m_gravity_on = false;
 	brick->SetPosition(0.0f, 10.0f, 0.0f);
 	brick->SetColor(float(rand()) / RAND_MAX, float(rand()) / RAND_MAX, float(rand()) / RAND_MAX);
-	brick->m_state = BUILDING;
+	brick->m_state = CONTROL;
 	m_select_Object = brick;
 
 	man = new CMan();
@@ -475,6 +478,7 @@ CObject* CGame::MakeBrick()
 	man->SetColor(float(rand()) / RAND_MAX, float(rand()) / RAND_MAX, float(rand()) / RAND_MAX);
 	man->SetScale(0.2f, 0.2f, 0.2f);
 	man->SetRotation(float(rand()) / RAND_MAX * 360.f, 0.0f, 1.0f, 0.0f);
+	man->m_state = ZOMBIE;
 	
 	return brick;
 }

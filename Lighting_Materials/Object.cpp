@@ -8,7 +8,7 @@ float GetDistance(CObject *o1, CObject *o2);
 float GetPointDistance(float p1[3], float p2[3]);
 CObject::CObject()
 {
-	material.shininess = 80.f;
+	material.shininess = 50.f;
 
 	m_gravity_on = true;
 	m_gravity_scale = 9.8f;
@@ -34,8 +34,7 @@ CObject::CObject()
 	m_fAngle[2] = 1.0f;
 	m_fAngle[3] = 0.0f;
 
-	CGame::m_Objects[CGame::m_Objects_num] = this;
-	CGame::m_Objects_num++;
+	CGame::m_Objects[CGame::m_Objects_num++] = this;
 }
 
 CObject::CObject(float *fPosition, float *fSclae, float *fColor, float *fVelocity)
@@ -56,8 +55,7 @@ CObject::CObject(float *fPosition, float *fSclae, float *fColor, float *fVelocit
 	for (i = 0; i < 3; i++)
 		m_fVelocity[i] = fVelocity[i];
 
-	CGame::m_Objects[CGame::m_Objects_num] = this;
-	CGame::m_Objects_num++;
+	CGame::m_Objects[CGame::m_Objects_num++] = this;
 }
 
 CObject::~CObject() {}
@@ -167,7 +165,17 @@ bool Sphere_Sphere_Collide(CSphere *sphere1, CSphere *sphere2)
 	float distance = GetDistance(sphere1, sphere2);
 
 	if (distance <= sphere1->m_dRadius + sphere2->m_dRadius)
+	{
+		if (sphere1->m_fVelocity[0] != 0 || sphere1->m_fVelocity[1] != 0 || sphere1->m_fVelocity[2] != 0)
+		{
+			float adistance = sphere1->m_dRadius + sphere2->m_dRadius - distance;
+			glm::vec3 normalized = glm::normalize(glm::vec3(sphere1->m_fVelocity[0], sphere1->m_fVelocity[1], sphere1->m_fVelocity[2]));
+		
+			normalized *= -adistance;
+			sphere1->Translate(normalized.x, normalized.y, normalized.z);
+		}
 		return true;
+	}
 	return false;
 }
 

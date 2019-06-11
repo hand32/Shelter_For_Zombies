@@ -1,3 +1,7 @@
+# This file uses centimeters as units for non-parametric coordinates.
+
+mtllib Strong Man.mtl
+g default
 v -0.363849 2.261162 -1.053218
 v -0.363849 2.438141 1.019161
 v 1.184241 3.424554 -0.588613
