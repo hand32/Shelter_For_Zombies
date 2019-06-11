@@ -265,15 +265,17 @@ void InputVertex(int* index, GLfloat* array, const GLfloat* vertex)
 
 bool CGame::InitializeApp()
 {
-	//GLfloat *positionData = new GLfloat[(1212 + 30 * 30 * 6) * 3 * 3];
-	//GLfloat *normalData = new GLfloat[(1212 + 30 * 30 * 6) * 3 * 3];
-	GLfloat *positionData = new GLfloat[(600*3 + 30 * 30 * 6) * 3 * 3];
-	GLfloat *normalData = new GLfloat[(900*3 + 30 * 30 * 6) * 3 * 3];
+	GLfloat *positionData = new GLfloat[(1600 + 30 * 30 * 6) * 9];
+	GLfloat *normalData = new GLfloat[(1600 + 30 * 30 * 6) * 9];
+	GLfloat *cubeVertex = new GLfloat[900 * 9];
+	GLfloat *cubeNormal = new GLfloat[900 * 9];
 
 	glClearColor(m_fBgColor[0], m_fBgColor[1], m_fBgColor[2], m_fBgColor[3]);
 	glEnable(GL_DEPTH_TEST);
 
 	if (!LoadObj("man.obj", &positionData, &m_nMan_VertexCnt, &normalData))
+		return false;
+	if (!LoadObj("cube.obj", &cubeVertex, &m_nCube_VertexCnt, &cubeNormal))
 		return false;
 
 	m_Glsl[0].Compile("phong.vsl", GAME_GL_VERTEX);
@@ -296,7 +298,7 @@ bool CGame::InitializeApp()
 	int m_nFaceNum = nStack * nSlice * 2;
 
 
-	int index = m_nMan_VertexCnt;
+	int index = m_nMan_VertexCnt / 3;
 	m_nSphere_VertexCnt = 0;
 	for (stack = 0; stack < nStack; stack++)
 	{
@@ -385,106 +387,14 @@ bool CGame::InitializeApp()
 		}
 	}
 
-	m_nCube_VertexCnt = 0;
-	int cubeIndex = (m_nSphere_VertexCnt + m_nMan_VertexCnt) * 9;
-	int cubeNormalIndex = (m_nSphere_VertexCnt + m_nMan_VertexCnt) * 9;
-	const GLfloat Corners[8][3] = { {-0.5f, 0.5f, 0.5f}, {0.5f, 0.5f, 0.5f}, {0.5f, 0.5f, -0.5f}, {-0.5f, 0.5f, -0.5f},
-			{-0.5f, -0.5f, -0.5f}, {-0.5f, -0.5f, 0.5f}, {0.5f, -0.5f, 0.5f}, {0.5f, -0.5f, -0.5f}, };
-	const GLfloat CubeNormal[8][3] = { {-1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, -1.0f}, {-1.0f, 1.0f, -1.0f},
-			{-1.0f, -1.0f, -1.0f}, {-1.0f, -1.0f, 1.0f}, {1.0f, -1.0f, 1.0f}, {1.0f, -1.0f, -1.0f}, };
-	
-	// top
-	InputVertex(&cubeIndex, positionData, Corners[0]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[0]);
-	InputVertex(&cubeIndex, positionData, Corners[1]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[1]);
-	InputVertex(&cubeIndex, positionData, Corners[3]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[3]);
-
-	InputVertex(&cubeIndex, positionData, Corners[1]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[1]);
-	InputVertex(&cubeIndex, positionData, Corners[2]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[2]);
-	InputVertex(&cubeIndex, positionData, Corners[3]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[3]);
-
-
-	// left
-	InputVertex(&cubeIndex, positionData, Corners[0]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[0]);
-	InputVertex(&cubeIndex, positionData, Corners[5]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[5]);
-	InputVertex(&cubeIndex, positionData, Corners[4]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[4]);
-
-	InputVertex(&cubeIndex, positionData, Corners[0]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[0]);
-	InputVertex(&cubeIndex, positionData, Corners[3]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[3]);
-	InputVertex(&cubeIndex, positionData, Corners[4]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[4]);
-
-	// front
-	InputVertex(&cubeIndex, positionData, Corners[0]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[0]);
-	InputVertex(&cubeIndex, positionData, Corners[5]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[5]);
-	InputVertex(&cubeIndex, positionData, Corners[6]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[6]);
-
-	InputVertex(&cubeIndex, positionData, Corners[0]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[0]);
-	InputVertex(&cubeIndex, positionData, Corners[6]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[6]);
-	InputVertex(&cubeIndex, positionData, Corners[1]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[1]);
-
-	// bottom
-	InputVertex(&cubeIndex, positionData, Corners[7]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[7]);
-	InputVertex(&cubeIndex, positionData, Corners[6]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[6]);
-	InputVertex(&cubeIndex, positionData, Corners[5]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[5]);
-
-	InputVertex(&cubeIndex, positionData, Corners[7]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[7]);
-	InputVertex(&cubeIndex, positionData, Corners[5]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[5]);
-	InputVertex(&cubeIndex, positionData, Corners[4]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[4]);
-
-	// back
-	InputVertex(&cubeIndex, positionData, Corners[4]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[4]);
-	InputVertex(&cubeIndex, positionData, Corners[3]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[3]);
-	InputVertex(&cubeIndex, positionData, Corners[2]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[2]);
-
-	InputVertex(&cubeIndex, positionData, Corners[4]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[4]);
-	InputVertex(&cubeIndex, positionData, Corners[2]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[2]);
-	InputVertex(&cubeIndex, positionData, Corners[7]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[7]);
-
-	// right
-	InputVertex(&cubeIndex, positionData, Corners[7]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[7]);
-	InputVertex(&cubeIndex, positionData, Corners[2]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[2]);
-	InputVertex(&cubeIndex, positionData, Corners[1]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[1]);
-
-	InputVertex(&cubeIndex, positionData, Corners[7]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[7]);
-	InputVertex(&cubeIndex, positionData, Corners[1]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[1]);
-	InputVertex(&cubeIndex, positionData, Corners[6]);
-	InputVertex(&cubeNormalIndex, normalData, CubeNormal[6]);
-
-	m_nCube_VertexCnt = 36;
+	int cubeIndex = (m_nSphere_VertexCnt + m_nMan_VertexCnt) * 3;
+	int cnt = 0;
+	for (int i = cubeIndex; i < cubeIndex + (m_nCube_VertexCnt) * 3; i++)
+	{
+		positionData[i] = cubeVertex[cnt];
+		normalData[i] = cubeNormal[cnt];
+		cnt++;
+	}
 
 	GLuint VboHandles[2];
 	glGenBuffers(2, VboHandles);
@@ -492,10 +402,10 @@ bool CGame::InitializeApp()
 	GLuint normalBufferHandle = VboHandles[1];
 
 	glBindBuffer(GL_ARRAY_BUFFER, positionBufferHandle);
-	glBufferData(GL_ARRAY_BUFFER, (m_nMan_VertexCnt + m_nSphere_VertexCnt + m_nCube_VertexCnt) * 9 * sizeof(GLfloat), positionData, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, (m_nMan_VertexCnt + m_nSphere_VertexCnt + m_nCube_VertexCnt) * 3 * sizeof(GLfloat), positionData, GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ARRAY_BUFFER, normalBufferHandle);
-	glBufferData(GL_ARRAY_BUFFER, (m_nMan_VertexCnt + m_nSphere_VertexCnt + m_nCube_VertexCnt) * 9 * sizeof(GLfloat), normalData, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, (m_nMan_VertexCnt + m_nSphere_VertexCnt + m_nCube_VertexCnt) * 3 * sizeof(GLfloat), normalData, GL_STATIC_DRAW);
 
 
 	// Create and set-up the vertex array object
@@ -517,6 +427,8 @@ bool CGame::InitializeApp()
 	delete[] normalData;
 	delete[] m_man_Vertex;
 	delete[] m_man_Normal;
+	delete[] cubeVertex;
+	delete[] cubeNormal;
 	return true;
 }
 
@@ -554,6 +466,7 @@ CObject* CGame::MakeBrick()
 	brick->m_gravity_on = false;
 	brick->SetPosition(0.0f, 10.0f, 0.0f);
 	brick->SetColor(float(rand()) / RAND_MAX, float(rand()) / RAND_MAX, float(rand()) / RAND_MAX);
+	brick->m_state = BUILDING;
 	m_select_Object = brick;
 
 	man = new CMan();

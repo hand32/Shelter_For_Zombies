@@ -78,7 +78,7 @@ void CSphere::Render()
 	m_Glsl->Uniform1f("Material.Shininess", material.shininess);
 
 	glBindVertexArray(CGame::pInstance->m_VaoHandle);
-	glDrawArrays(GL_TRIANGLES, CGame::pInstance->m_nMan_VertexCnt * 3, CGame::pInstance->m_nSphere_VertexCnt);
+	glDrawArrays(GL_TRIANGLES, CGame::pInstance->m_nMan_VertexCnt, CGame::pInstance->m_nSphere_VertexCnt);
 	glBindVertexArray(0);
 
 	m_Glsl->Stop();
