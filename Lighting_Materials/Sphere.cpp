@@ -43,7 +43,7 @@ void CSphere::Render()
 		glm::vec3(m_dLookAt[2][0], m_dLookAt[2][1], m_dLookAt[2][2]));
 
 	glm::mat4 Model = glm::mat4(1.0f);
-	glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(m_fScale[0], m_fScale[1], m_fScale[2]));
+	glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(m_fScale[0] * m_dRadius * 2, m_fScale[1] * m_dRadius * 2, m_fScale[2] * m_dRadius * 2));
 	glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), m_fAngle[0], glm::vec3(m_fAngle[1], m_fAngle[2], m_fAngle[3]));
 	glm::mat4 translate = glm::translate(glm::mat4(1.0f), glm::vec3(m_fPosition[0], m_fPosition[1], m_fPosition[2]));
 	Model = translate * rotate * scale * Model;

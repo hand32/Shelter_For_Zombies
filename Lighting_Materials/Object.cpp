@@ -191,11 +191,9 @@ bool Sphere_Sphere_Collide(CSphere *sphere1, CSphere *sphere2)
 	return false;
 }
 
-bool Sphere_Cube_Collide(CSphere *sphere, CCube *cube)
+glm::vec3 GetBoxPoint(CSphere *sphere, CCube *cube)
 {
 	float box_point[3];
-	float distance;
-
 	if (sphere->m_fPosition[0] < cube->m_fPosition[0] - cube->m_fScale[0] * 0.5f)
 		box_point[0] = cube->m_fPosition[0] - cube->m_fScale[0] * 0.5f;
 	else if (sphere->m_fPosition[0] > cube->m_fPosition[0] + cube->m_fScale[0] * 0.5f)
@@ -217,24 +215,46 @@ bool Sphere_Cube_Collide(CSphere *sphere, CCube *cube)
 	else
 		box_point[2] = sphere->m_fPosition[2];
 
+	return glm::vec3(box_point[0], box_point[1], box_point[2]);
+}
+bool Sphere_Cube_Collide(CSphere *sphere, CCube *cube)
+{
+	glm::vec3 box_point_v;
+	float box_point[3];
+	float distance;
+
+	box_point_v = GetBoxPoint(sphere, cube);
+	box_point[0] = box_point_v.x;
+	box_point[1] = box_point_v.y;
+	box_point[2] = box_point_v.z;
+
 	distance = GetPointDistance(box_point, sphere->m_fPosition);
 	if (distance <= sphere->m_dRadius)
 	{
 		if (sphere->m_fVelocity[0] != 0 || sphere->m_fVelocity[1] != 0 || sphere->m_fVelocity[2] != 0)
 		{
-			float adistance = sphere->m_dRadius + GetPointDistance(box_point, sphere->m_fPosition) - distance;
 			glm::vec3 normalized = glm::normalize(glm::vec3(sphere->m_fVelocity[0], sphere->m_fVelocity[1], sphere->m_fVelocity[2]));
-
-			normalized *= -adistance;
-			sphere->Translate(normalized.x, normalized.y, normalized.z);
+			glm::vec3 sp = glm::vec3(sphere->m_fPosition[0], sphere->m_fPosition[1], sphere->m_fPosition[2]);
+			glm::vec3 bp = glm::vec3(box_point[0], box_point[1], box_point[2]);
+			while (sphere->m_dRadius - distance > 0.01f)
+			{
+				sp -= normalized * 0.01f;
+				distance = GetPointDistance(sp, bp);
+				sphere->SetPosition(sp.x, sp.y, sp.z);
+				bp = GetBoxPoint(sphere, cube);
+			}
 		}
 		else if (cube->m_fVelocity[0] != 0 || cube->m_fVelocity[1] != 0 || cube->m_fVelocity[2] != 0)
 		{
-			float adistance = sphere->m_dRadius + GetPointDistance(box_point, sphere->m_fPosition) - distance;
 			glm::vec3 normalized = glm::normalize(glm::vec3(cube->m_fVelocity[0], cube->m_fVelocity[1], cube->m_fVelocity[2]));
-
-			normalized *= -adistance;
-			cube->Translate(normalized.x, normalized.y, normalized.z);
+			glm::vec3 sp = glm::vec3(sphere->m_fPosition[0], sphere->m_fPosition[1], sphere->m_fPosition[2]);
+			glm::vec3 cp = glm::vec3(box_point[0], box_point[1], box_point[2]);
+			while (sphere->m_dRadius - distance > 0.01f)
+			{
+				distance = GetPointDistance(sp, cp);
+				cube->Translate(-normalized.x * 0.01f, -normalized.y * 0.01f, -normalized.z * 0.01f);
+				cp = GetBoxPoint(sphere, cube);
+			}
 		}
 		return true;
 	}

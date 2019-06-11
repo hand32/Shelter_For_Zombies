@@ -72,17 +72,15 @@ void CGame::Create(int arg, char **argc, float *fBgColor, double (*dLookAt)[3], 
 
 	m_select_Object = NULL;
 	CSphere *newSphere = new CSphere();
-	newSphere->SetPosition(10.0f, 5.0f, 0.0f);
-	newSphere->SetScale(1.0f, 1.0f, 1.0f);
-	newSphere->SetColor(1.0f, 1.0f, 1.0f);
-	newSphere->SetRadius(1.0f);
-	newSphere->SetVelocity(1.0f, -1.0f, 0.0f);
+	newSphere->SetPosition(10.0f, 1.5f, 0.0f);
+	newSphere->SetRadius(0.5f);
 	newSphere->m_gravity_on = false;
 
 	CCube *newCube = new CCube();
-	newCube->SetPosition(-10.0f, 10.0f, 0.0f);
+	newCube->SetPosition(13.0f, 1.5f, 0.0f);
 	newCube->SetScale(1.0f, 1.0f, 1.0f);
 	newCube->SetColor(1.0f, 0.0f, 0.0f);
+	newSphere->m_gravity_on = false;
 
 	newCube = new CCube();
 	newCube->SetPosition(0.0f, 0.0f, 0.0f);
@@ -165,6 +163,11 @@ void CGame::RenderScene()
 		MakeBrick();
 
 	m_nBaseTime = glutGet(GLUT_ELAPSED_TIME);
+	glPointSize(5.0f);
+	glBegin(GL_POINTS);
+	glVertex3f(0.f, 2.f, 0.f);
+	glEnd(); 
+
 
 	glutSwapBuffers();
 	glutPostRedisplay();
@@ -298,7 +301,7 @@ bool CGame::InitializeApp()
 	int nStack = 30, nSlice = 30;
 	double sliceStep = 2 * PI / nSlice;
 	double stackStep = PI / nStack;
-	double radius = 1;
+	double radius = 0.5f;
 
 	int m_nFaceNum = nStack * nSlice * 2;
 
@@ -454,12 +457,12 @@ CObject* CGame::MakeBrick()
 	CMan* man;
 	int ran = rand() % 2;
 
-	switch (SPHERE)
+	switch (ran)
 	{
 	case SPHERE:
 		brick = new CSphere();
 		brick->GetRealClass(sphere, cube, man);
-		sphere->SetRadius((float(rand()) / RAND_MAX) * 0.5f + 0.5f);
+		sphere->SetRadius((float(rand()) / RAND_MAX) * 0.35f + 0.35f);
 		break;
 	case CUBE:
 		brick = new CCube();
