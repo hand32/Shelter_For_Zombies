@@ -139,19 +139,20 @@ void CGame::RenderScene()
 	m_worldLight.Ld = glm::vec3(1.0f, 1.0f, 1.0f);
 	m_worldLight.Ls = glm::vec3(1.0f, 1.0f, 1.0f);
 
+	bool makeBrick = false;
 	for (int i = 0; i < m_Objects_num; i++)
 	{
 		for (int j = 0; j < m_Objects_num; j++)
 		{
-			if (i != j && m_Objects[i]->m_type != MAN &&
-				m_Objects[i]->m_state != CONTROL)
+			if (i != j && m_Objects[i]->m_type != MAN && m_Objects[j]->m_type != MAN &&
+				m_Objects[i]->m_state != CONTROL && m_Objects[j]->m_state != CONTROL)
 			{
 				if (m_Objects[i]->Collide(m_Objects[j]) == true)
 				{
 					m_Objects[i]->m_gravity_on = false;
 					m_Objects[i]->SetVelocity(0.0f, 0.0f, 0.0f);
 					if (m_Objects[i] == m_select_Object)
-						MakeBrick();
+						makeBrick = true;
 					break;
 				}
 			}
@@ -160,7 +161,8 @@ void CGame::RenderScene()
 		m_Objects[i]->Move(nElapsedTime);
 		m_Objects[i]->Render();
 	}
-
+	if (makeBrick == true)
+		MakeBrick();
 
 	m_nBaseTime = glutGet(GLUT_ELAPSED_TIME);
 
