@@ -132,7 +132,7 @@ void CGame::RenderScene()
 		glm::vec3(m_dLookAt[1][0], m_dLookAt[1][1], m_dLookAt[1][2]),
 		glm::vec3(m_dLookAt[2][0], m_dLookAt[2][1], m_dLookAt[2][2]));
 	//glLoadIdentity();
-	m_ProjectionMatrix = glm::ortho(m_projectionNums.x, m_projectionNums.y, m_projectionNums.z, m_projectionNums.w, 0.1f, 60.0f);
+	m_ProjectionMatrix = glm::ortho(m_projectionNums.x, m_projectionNums.y, m_projectionNums.z, m_projectionNums.w, 0.1f, 70.0f);
 	
 	
 	m_worldLight.Position = glm::vec4(50.0 * cos(m_nCurrentTime / 800.0), 30.0, 50.0 * sin(m_nCurrentTime / 800.0), 1.0);
@@ -268,21 +268,27 @@ void CGame::MouseWheel(int button, int state, int x, int y)
 {
 	if (state == 1)
 	{
-		m_dLookAt[0][1] -= 0.5f;
-		glm::vec2 normalized = glm::normalize(glm::vec2(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT)));
-		m_projectionNums.x += normalized.x;
-		m_projectionNums.y -= normalized.x;
-		m_projectionNums.z += normalized.y;
-		m_projectionNums.w -= normalized.y;
+		if (m_dLookAt[0][1] > 3.0f)
+		{
+			m_dLookAt[0][1] -= 0.7f;
+			glm::vec2 normalized = glm::normalize(glm::vec2(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT)));
+			m_projectionNums.x += normalized.x;
+			m_projectionNums.y -= normalized.x;
+			m_projectionNums.z += normalized.y;
+			m_projectionNums.w -= normalized.y;
+		}
 	}
 	else if (state == -1)
 	{
-		m_dLookAt[0][1] += 0.5f;
-		glm::vec2 normalized = glm::normalize(glm::vec2(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT)));
-		m_projectionNums.x -= normalized.x;
-		m_projectionNums.y += normalized.x;
-		m_projectionNums.z -= normalized.y;
-		m_projectionNums.w += normalized.y;
+		if (m_dLookAt[0][1] < 30.f)
+		{
+			m_dLookAt[0][1] += 0.7f;
+			glm::vec2 normalized = glm::normalize(glm::vec2(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT)));
+			m_projectionNums.x -= normalized.x;
+			m_projectionNums.y += normalized.x;
+			m_projectionNums.z -= normalized.y;
+			m_projectionNums.w += normalized.y;
+		}
 	}
 }
 
