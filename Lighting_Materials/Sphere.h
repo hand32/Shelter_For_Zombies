@@ -15,6 +15,7 @@ public:
 	void SetRadius(double radius);
 
 	virtual void GetRealClass(CSphere*& sphere, CCube*& cube, CMan*& man) override;
-	virtual void Render() override;
+	virtual void RenderScene() override;
+	virtual void RenderShadow() override;
 };
 

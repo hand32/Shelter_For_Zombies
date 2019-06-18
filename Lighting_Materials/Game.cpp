@@ -92,6 +92,17 @@ void CGame::Create(int arg, char **argc, float *fBgColor, double (*dLookAt)[3], 
 	newCube->material.shininess = 20000.0f;
 	newCube->m_state = GROUND;
 
+	newCube = new CCube();
+	newCube->SetPosition(0.0f, 3.0f, 0.0f);
+	newCube->SetScale(5.0f, 2.0f, 3.0f);
+	newCube->SetColor(1.0f, 1.0f, 1.0f);;
+	newCube->m_gravity_on = false;
+	newCube->material.specular[0] = 0.1f;
+	newCube->material.specular[1] = 0.1f;
+	newCube->material.specular[2] = 0.1f;
+	newCube->material.shininess = 20000.0f;
+	newCube->m_state = BUILDING;
+
 	MakeBrick();
 
 	
@@ -126,15 +137,16 @@ void CGame::RenderScene()
 	m_nPreviousTime = m_nBaseTime;
 
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//glMatrixMode(GL_MODELVIEW);
+	glClearColor(m_fBgColor[0], m_fBgColor[1], m_fBgColor[2], m_fBgColor[3]);
 
 	m_View = glm::lookAt(glm::vec3(m_dLookAt[0][0], m_dLookAt[0][1], m_dLookAt[0][2]),
 		glm::vec3(m_dLookAt[1][0], m_dLookAt[1][1], m_dLookAt[1][2]),
 		glm::vec3(m_dLookAt[2][0], m_dLookAt[2][1], m_dLookAt[2][2]));
-	//glLoadIdentity();
-	m_ProjectionMatrix = glm::ortho(m_projectionNums.x, m_projectionNums.y, m_projectionNums.z, m_projectionNums.w, 0.1f, 70.0f);
+	m_ProjectionMatrix =
+		glm::ortho(m_projectionNums.x, m_projectionNums.y, m_projectionNums.z, m_projectionNums.w,
+			-10.0f, 100.0f);
 	
-	
+
 	m_worldLight.Position = glm::vec4(50.0 * cos(m_nCurrentTime / 800.0), 30.0, 50.0 * sin(m_nCurrentTime / 800.0), 1.0);
 	m_worldLight.La = glm::vec3(0.3f, 0.3f, 0.3f);
 	m_worldLight.Ld = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -162,17 +174,27 @@ void CGame::RenderScene()
 		}
 		m_Objects[i]->Gravity(nElapsedTime);
 		m_Objects[i]->Move(nElapsedTime);
-		m_Objects[i]->Render();
 	}
+	glBindFramebuffer(GL_FRAMEBUFFER, CGame::pInstance->m_frameBuffer);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	m_Glsl[1].Use();
+	for (int i = 0; i < m_Objects_num; i++)
+		m_Objects[i]->RenderShadow();
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	m_Glsl[0].Use();
+	for (int i = 0; i < m_Objects_num; i++)
+		m_Objects[i]->RenderScene();
+
 	if (makeBrick == true)
 		MakeBrick();
 
 	m_nBaseTime = glutGet(GLUT_ELAPSED_TIME);
-	glPointSize(5.0f);
-	glBegin(GL_POINTS);
-	glVertex3f(0.f, 2.f, 0.f);
-	glEnd(); 
-
 
 	glutSwapBuffers();
 	glutPostRedisplay();
@@ -253,11 +275,6 @@ void CGame::SpecialInput(int key, int x, int y)
 void CGame::Resize(int width, int height)
 {
 	glViewport(0, 0, width, height);
-	//glMatrixMode(GL_PROJECTION);
-	//glLoadIdentity();
-	//glOrtho(-24, 24, -18, 18, 0.1f, 60.0f);
-	//gluPerspective(60, (double)width / (double)height, 0.1, 80.0);
-	//m_ProjectionMatrix = glm::ortho(m_projectionNums.x, m_projectionNums.y, m_projectionNums.z, m_projectionNums.w, 0.1f, 65.0f);
 }
 
 void CGame::Mouse(int button, int state, int x, int y)
@@ -271,6 +288,7 @@ void CGame::MouseWheel(int button, int state, int x, int y)
 		if (m_dLookAt[0][1] > 3.0f)
 		{
 			m_dLookAt[0][1] -= 0.7f;
+			printf("%d", glutGet(GLUT_WINDOW_WIDTH));
 			glm::vec2 normalized = glm::normalize(glm::vec2(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT)));
 			m_projectionNums.x += normalized.x;
 			m_projectionNums.y -= normalized.x;
@@ -308,7 +326,14 @@ bool CGame::InitializeApp()
 	GLfloat *cubeNormal = new GLfloat[900 * 9];
 
 	glClearColor(m_fBgColor[0], m_fBgColor[1], m_fBgColor[2], m_fBgColor[3]);
+	// Enable depth test
 	glEnable(GL_DEPTH_TEST);
+
+	// Accept fragment if it closer to the camera than the former one
+	glDepthFunc(GL_LESS);
+
+	// Cull triangles which normal is not towards the camera
+	glEnable(GL_CULL_FACE);
 
 	if (!LoadObj("man.obj", &positionData, &m_nMan_VertexCnt, &normalData))
 		return false;
@@ -319,8 +344,8 @@ bool CGame::InitializeApp()
 	m_Glsl[0].Compile("phong.fsl", GAME_GL_FRAGMENT);
 	m_Glsl[0].Link();
 
-	m_Glsl[1].Compile("flat.vsl", GAME_GL_VERTEX);
-	m_Glsl[1].Compile("flat.fsl", GAME_GL_FRAGMENT);
+	m_Glsl[1].Compile("shadow.vsl", GAME_GL_VERTEX);
+	m_Glsl[1].Compile("shadow.fsl", GAME_GL_FRAGMENT);
 	m_Glsl[1].Link();
 
 	const double PI = 3.14159;
@@ -457,8 +482,6 @@ bool CGame::InitializeApp()
 
 	glBindBuffer(GL_ARRAY_BUFFER, normalBufferHandle);
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
-
-	glBindVertexArray(0);
 	
 	delete[] positionData;
 	delete[] normalData;
@@ -466,6 +489,27 @@ bool CGame::InitializeApp()
 	delete[] m_man_Normal;
 	delete[] cubeVertex;
 	delete[] cubeNormal;
+
+	//////////////////////////////////////////////////////////////////
+	// For Shadow
+	glGenFramebuffers(1, &m_frameBuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
+
+	glGenTextures(1, &m_depthTexture);
+	glBindTexture(GL_TEXTURE_2D, m_depthTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, m_depthTexture, 0);
+	glDrawBuffer(GL_NONE);
+	// Always check that our framebuffer is ok
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+		return false;
+	//////////////////////////////////////////////////////////////////
+
 	return true;
 }
 

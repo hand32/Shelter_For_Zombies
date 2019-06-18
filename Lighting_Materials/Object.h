@@ -62,6 +62,7 @@ public:
 	//각 Object 특성에 따라 충돌판정함.
 	bool Collide(CObject *other);
 	//각 Object 특성에 따라 Render 함.
-	virtual void Render() = 0;
+	virtual void RenderScene() = 0;
+	virtual void RenderShadow() = 0;
 	virtual void GetRealClass(CSphere*& sphere, CCube*& cube, CMan*& man) = 0;
 };

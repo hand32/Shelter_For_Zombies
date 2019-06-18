@@ -13,21 +13,51 @@ CCube::CCube(float *fPosition, float *fScale, float *fColor, float *fVelocity)
 
 CCube::~CCube() {}
 
-void CCube::Render()
+void CCube::RenderShadow()
 {
+	glViewport(0, 0, 1024, 1024);
 	CGLSLProgram* m_Glsl;
-	if(m_state == GROUND)
-		m_Glsl = &CGame::pInstance->m_Glsl[0];
-	else
-		m_Glsl = &CGame::pInstance->m_Glsl[0];
-	m_Glsl->Use();
+	m_Glsl = &CGame::pInstance->m_Glsl[1];
+	LightInfo worldlight = CGame::pInstance->m_worldLight;
+	
+	glm::mat4 m_ProjectionMatrix = CGame::pInstance->m_ProjectionMatrix;
+	
+	glm::mat4 biasMatrix{
+		0.5, 0.0, 0.0, 0.0,
+		0.0, 0.5, 0.0, 0.0,
+		0.0, 0.0, 0.5, 0.0,
+		0.5, 0.5, 0.5, 1.0
+	};
+	glm::mat4 depthView =
+		glm::lookAt(glm::vec3(worldlight.Position),
+			glm::vec3(0., 0., 0.),
+			glm::vec3(0., 1., 0.));
+	glm::mat4 depthModel = glm::mat4(1.0f);
+	glm::mat4 depthProjection = m_ProjectionMatrix;
+	glm::mat4 depthMVP = m_ProjectionMatrix * depthView * depthModel;
+	m_Glsl->UniformMatrix4fv("depthMVP", &depthMVP[0][0]);
+	
+
+	//glViewport(0, 0, (CGame::pInstance->m_nW), CGame::pInstance->m_nH);
+	glBindVertexArray(CGame::pInstance->m_VaoHandle);
+	glDrawArrays(GL_TRIANGLES, (CGame::pInstance->m_nMan_VertexCnt + CGame::pInstance->m_nSphere_VertexCnt), CGame::pInstance->m_nCube_VertexCnt);
+	glBindVertexArray(0);
+
+}
+
+void CCube::RenderScene()
+{
+	glViewport(0, 0, CGame::pInstance->m_nW, CGame::pInstance->m_nH);
+	CGLSLProgram* m_Glsl;
+	m_Glsl = &CGame::pInstance->m_Glsl[0];
 	double(*m_dLookAt)[3];
 	m_dLookAt = CGame::pInstance->m_dLookAt;
+	LightInfo worldlight = CGame::pInstance->m_worldLight;
+
 
 	glm::mat4 m_ProjectionMatrix = CGame::pInstance->m_ProjectionMatrix;
-	glm::mat4 m_View = glm::lookAt(glm::vec3(m_dLookAt[0][0], m_dLookAt[0][1], m_dLookAt[0][2]),
-		glm::vec3(m_dLookAt[1][0], m_dLookAt[1][1], m_dLookAt[1][2]),
-		glm::vec3(m_dLookAt[2][0], m_dLookAt[2][1], m_dLookAt[2][2]));
+
+	glm::mat4 m_View = CGame::pInstance->m_View;
 
 	glm::mat4 Model = glm::mat4(1.0f);
 	glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(m_fScale[0], m_fScale[1], m_fScale[2]));
@@ -42,12 +72,26 @@ void CCube::Render()
 
 	glm::mat3 m_Normal = glm::mat3(glm::vec3(MV[0]), glm::vec3(MV[1]), glm::vec3(MV[2]));
 
+	glm::mat4 biasMatrix{
+		0.5, 0.0, 0.0, 0.0,
+		0.0, 0.5, 0.0, 0.0,
+		0.0, 0.0, 0.5, 0.0,
+		0.5, 0.5, 0.5, 1.0
+	};
+	glm::mat4 depthView =
+		glm::lookAt(glm::vec3(worldlight.Position),
+			glm::vec3(0., 0., 0.),
+			glm::vec3(0., 1., 0.));
+	glm::mat4 depthModel = glm::mat4(1.0f);
+	glm::mat4 depthProjection = m_ProjectionMatrix;
+	glm::mat4 depthMVP = m_ProjectionMatrix * depthView * depthModel;
+	glm::mat4 depthBiasMVP = biasMatrix * depthMVP;
+	//glViewport(0, 0, (CGame::pInstance->m_nW), CGame::pInstance->m_nH);
 	m_Glsl->UniformMatrix4fv("MVP", &m_Mvp[0][0]);
 	m_Glsl->UniformMatrix4fv("ProjectionMatrix", &m_ProjectionMatrix[0][0]);
 	m_Glsl->UniformMatrix4fv("ModelViewMatrix", &MV[0][0]);
 	m_Glsl->UniformMatrix3fv("NormalMatrix", &m_Normal[0][0]);
 
-	LightInfo worldlight = CGame::pInstance->m_worldLight;
 	glm::vec4 LightPosition = m_View * worldlight.Position;
 	m_Glsl->Uniform4f("Light.Position", LightPosition[0], LightPosition[1], LightPosition[2], LightPosition[3]);
 	m_Glsl->Uniform3f("Material.Kd", m_fColor[0], m_fColor[1], m_fColor[2]);
@@ -57,12 +101,15 @@ void CCube::Render()
 	m_Glsl->Uniform3f("Material.Ks", material.specular[0], material.specular[1], material.specular[2]);
 	m_Glsl->Uniform3f("Light.Ls", worldlight.Ls[0], worldlight.Ls[1], worldlight.Ls[2]);
 	m_Glsl->Uniform1f("Material.Shininess", material.shininess);
+	m_Glsl->UniformMatrix4fv("DepthBiasMVP", &depthBiasMVP[0][0]);
+	GLuint ShadowMapID = glGetUniformLocation(m_Glsl->m_Handle, "shadowMap");
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, CGame::pInstance->m_depthTexture);
+	glUniform1i(ShadowMapID, 0);
 
 	glBindVertexArray(CGame::pInstance->m_VaoHandle);
 	glDrawArrays(GL_TRIANGLES, (CGame::pInstance->m_nMan_VertexCnt + CGame::pInstance->m_nSphere_VertexCnt), CGame::pInstance->m_nCube_VertexCnt);
 	glBindVertexArray(0);
-
-	m_Glsl->Stop();
 }
 
 void CCube::GetRealClass(CSphere*& sphere, CCube*& cube, CMan*& man)

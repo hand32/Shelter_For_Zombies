@@ -10,7 +10,8 @@ public:
 	CCube(float *fPosition, float *fScale, float *fColor, float *fVelocity);
 	~CCube();
 
-	virtual void Render() override;
+	virtual void RenderScene() override;
+	virtual void RenderShadow() override;
 	virtual void GetRealClass(CSphere*& sphere, CCube*& cube, CMan*& man) override;
 };
 

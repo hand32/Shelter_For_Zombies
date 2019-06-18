@@ -94,10 +94,10 @@
     <None Include="phong.vsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="flat.vsl">
+    <None Include="shadow.vsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="flat.fsl">
+    <None Include="shadow.fsl">
       <Filter>Shaders</Filter>
     </None>
   </ItemGroup>

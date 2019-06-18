@@ -52,6 +52,7 @@ public:
 	glm::vec4 m_projectionNums;
 	glm::mat4 m_View;
 
+	GLuint m_frameBuffer, m_depthTexture;
 	LightInfo m_worldLight;
 
 

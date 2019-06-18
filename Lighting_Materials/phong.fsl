@@ -1,9 +1,16 @@
 #version 430
 
 in vec3 LightIntensity;
+in vec4 ShadowCoord;
+
+uniform sampler2D shadowMap;
 
 layout( location = 0 ) out vec4 FragColor;
+float bias = 0.001;
 
 void main() {
-    FragColor = vec4(LightIntensity, 1.0);
+	float visibility = 1.0;
+	if (texture(shadowMap, ShadowCoord.xy).z < ShadowCoord.z - bias)
+		visibility = 0.5;
+	FragColor = vec4(LightIntensity * visibility, 1.0);
 }
