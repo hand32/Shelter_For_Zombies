@@ -36,7 +36,7 @@ void CCube::RenderShadow()
 	glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(m_fScale[0], m_fScale[1], m_fScale[2]));
 	glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), m_fAngle[0], glm::vec3(m_fAngle[1], m_fAngle[2], m_fAngle[3]));
 	glm::mat4 translate = glm::translate(glm::mat4(1.0f), glm::vec3(m_fPosition[0], m_fPosition[1], m_fPosition[2]));
-	depthModel = translate * rotate * scale * depthModel;
+	depthModel = rotate * translate * scale * depthModel;
 
 	glm::mat4 depthProjection = m_ProjectionMatrix;
 	glm::mat4 depthMVP = m_ProjectionMatrix * depthView * depthModel;
@@ -68,7 +68,7 @@ void CCube::RenderScene()
 	glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(m_fScale[0], m_fScale[1], m_fScale[2]));
 	glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), m_fAngle[0], glm::vec3(m_fAngle[1], m_fAngle[2], m_fAngle[3]));
 	glm::mat4 translate = glm::translate(glm::mat4(1.0f), glm::vec3(m_fPosition[0], m_fPosition[1], m_fPosition[2]));
-	Model = translate * rotate * scale * Model;
+	Model = rotate * translate * scale * Model;
 
 	glm::mat4 MV = m_View * Model;
 	glm::mat4 m_Mvp;
@@ -88,6 +88,7 @@ void CCube::RenderScene()
 			glm::vec3(0., 0., 0.),
 			glm::vec3(0., 1., 0.));
 	glm::mat4 depthModel = glm::mat4(1.0f);
+	depthModel = rotate * translate * scale * depthModel;
 	glm::mat4 depthProjection = m_ProjectionMatrix;
 	glm::mat4 depthMVP = m_ProjectionMatrix * depthView * depthModel;
 	glm::mat4 depthBiasMVP = biasMatrix * depthMVP;

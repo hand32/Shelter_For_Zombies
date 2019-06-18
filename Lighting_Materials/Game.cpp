@@ -80,10 +80,13 @@ void CGame::Create(int arg, char **argc, float *fBgColor, double (*dLookAt)[3], 
 		for(c = 0 ; c < 3 ; c++)
 			m_dLookAt[r][c] = dLookAt[r][c];
 
+	
 	m_select_Object = NULL;
 	CCube *newCube = new CCube();
 	newCube->SetPosition(2.0f, 0.0f, 2.0f);
 	newCube->SetScale(45.0f, 2.0f, 45.0f);
+	//newCube->SetScale(20.0f, 1.0f, 1.0f);
+	//newCube->SetRadius(10);
 	newCube->SetColor(1.0f, 1.0f, 1.0f);;
 	newCube->m_gravity_on = false;
 	newCube->material.specular[0] = 0.1f;
@@ -91,17 +94,25 @@ void CGame::Create(int arg, char **argc, float *fBgColor, double (*dLookAt)[3], 
 	newCube->material.specular[2] = 0.1f;
 	newCube->material.shininess = 20000.0f;
 	newCube->m_state = GROUND;
+	
+	
 
-	newCube = new CCube();
-	newCube->SetPosition(0.0f, 3.0f, 0.0f);
-	newCube->SetScale(5.0f, 2.0f, 3.0f);
+	/*
+	m_select_Object = NULL;
+	CSphere *newCube = new CSphere();
+	newCube->SetPosition(2.0f, 0.0f, 2.0f);
+	newCube->SetRadius(10);
 	newCube->SetColor(1.0f, 1.0f, 1.0f);;
 	newCube->m_gravity_on = false;
 	newCube->material.specular[0] = 0.1f;
 	newCube->material.specular[1] = 0.1f;
 	newCube->material.specular[2] = 0.1f;
 	newCube->material.shininess = 20000.0f;
-	newCube->m_state = BUILDING;
+	newCube->m_state = GROUND;
+	*/
+	
+	
+	
 
 	MakeBrick();
 
@@ -148,6 +159,7 @@ void CGame::RenderScene()
 	
 
 	m_worldLight.Position = glm::vec4(50.0 * cos(m_nCurrentTime / 800.0), 30.0, 50.0 * sin(m_nCurrentTime / 800.0), 1.0);
+	//m_worldLight.Position = glm::vec4(50.0 * cos(100 / 800.0), 30.0, 50.0 * sin(100 / 800.0), 1.0);
 	m_worldLight.La = glm::vec3(0.3f, 0.3f, 0.3f);
 	m_worldLight.Ld = glm::vec3(1.0f, 1.0f, 1.0f);
 	m_worldLight.Ls = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -552,7 +564,7 @@ CObject* CGame::MakeBrick()
 
 	man = new CMan();
 	man->m_gravity_on = false;
-	man->SetPosition((float(rand()) / RAND_MAX * 2 - 1) * 10, 2.f, (float(rand()) / RAND_MAX * 2 - 1) * 10);
+	man->SetPosition((float(rand()) / RAND_MAX * 2 - 1) * 10, 1.f, (float(rand()) / RAND_MAX * 2 - 1) * 10);
 	man->SetColor(float(rand()) / RAND_MAX, float(rand()) / RAND_MAX, float(rand()) / RAND_MAX);
 	man->SetScale(0.2f, 0.2f, 0.2f);
 	man->SetRotation(float(rand()) / RAND_MAX * 360.f, 0.0f, 1.0f, 0.0f);
