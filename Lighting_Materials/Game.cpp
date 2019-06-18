@@ -176,16 +176,16 @@ void CGame::RenderScene()
 		m_Objects[i]->Move(nElapsedTime);
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, CGame::pInstance->m_frameBuffer);
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
+	//glEnable(GL_CULL_FACE);
+	//glCullFace(GL_BACK);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	m_Glsl[1].Use();
 	for (int i = 0; i < m_Objects_num; i++)
 		m_Objects[i]->RenderShadow();
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
+	//glEnable(GL_CULL_FACE);
+	//glCullFace(GL_BACK);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	m_Glsl[0].Use();
 	for (int i = 0; i < m_Objects_num; i++)
@@ -552,7 +552,7 @@ CObject* CGame::MakeBrick()
 
 	man = new CMan();
 	man->m_gravity_on = false;
-	man->SetPosition((float(rand()) / RAND_MAX * 2 - 1) * 10, 5.f, (float(rand()) / RAND_MAX * 2 - 1) * 10);
+	man->SetPosition((float(rand()) / RAND_MAX * 2 - 1) * 10, 2.f, (float(rand()) / RAND_MAX * 2 - 1) * 10);
 	man->SetColor(float(rand()) / RAND_MAX, float(rand()) / RAND_MAX, float(rand()) / RAND_MAX);
 	man->SetScale(0.2f, 0.2f, 0.2f);
 	man->SetRotation(float(rand()) / RAND_MAX * 360.f, 0.0f, 1.0f, 0.0f);
