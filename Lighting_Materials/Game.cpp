@@ -213,7 +213,9 @@ void CGame::RenderScene()
 						m_Objects[j]->m_gravity_on = false;
 						m_Objects[j]->SetVelocity(0.0f, 0.0f, 0.0f);
 						if (m_Objects[j] == m_select_Object)
+						{
 							makeBrick = true;
+						}
 					}
 					if (m_Objects[i]->m_type == MAN)
 					{
@@ -234,7 +236,8 @@ void CGame::RenderScene()
 			}
 		}
 		m_Objects[i]->Gravity(nElapsedTime);
-		m_Objects[i]->Move(nElapsedTime);
+		if(m_Objects[i]->m_type != MANCOLLIDER)
+			m_Objects[i]->Move(nElapsedTime);
 	}
 	delete[] collideCheck;
 	glBindFramebuffer(GL_FRAMEBUFFER, CGame::pInstance->m_frameBuffer);

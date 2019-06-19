@@ -146,8 +146,6 @@ void CMan::RenderShadow()
 	glm::mat4 depthMVP = depthProjection * depthView * depthModel;
 	m_Glsl->UniformMatrix4fv("depthMVP", &depthMVP[0][0]);
 
-	//glViewport(0, 0, (CGame::pInstance->m_nW), CGame::pInstance->m_nH);
-
 	glBindVertexArray(CGame::pInstance->m_VaoHandle);
 	glDrawArrays(GL_TRIANGLES, 0, CGame::pInstance->m_nMan_VertexCnt);
 	glBindVertexArray(0);

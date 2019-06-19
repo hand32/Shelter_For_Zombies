@@ -12,8 +12,6 @@ bool LoadObj(char *FileName, GLfloat **Vertex, int *pVertexCnt, GLfloat **Normal
 {
 	GLfloat* VertexList = new GLfloat[3000];
 	GLfloat* NormalVertexList = new GLfloat[3000];
-	//*Normal = new GLfloat[10000];
-	//*Vertex = new GLfloat[10000];
 
 	FILE *fp;
 	int read, cnt = 0;
