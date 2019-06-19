@@ -10,6 +10,8 @@
 #include <string>
 #include <cstdlib>
 #include <glm/glm.hpp>
+#pragma comment(lib, "winmm")
+#include <mmsystem.h>
 
 enum
 {
@@ -21,6 +23,7 @@ enum
 };
 CGame::CGame(int nW, int nH, int nPosX, int nPosY)
 {
+	PlaySound(TEXT("bgm.wav"), NULL, SND_ASYNC | SND_LOOP);
 	m_nW = nW;
 	m_nH = nH;
 	
