@@ -100,11 +100,5 @@
     <None Include="shadow.fsl">
       <Filter>Shaders</Filter>
     </None>
-    <None Include="Hud.fsl">
-      <Filter>Shaders</Filter>
-    </None>
-    <None Include="Hud.vsl">
-      <Filter>Shaders</Filter>
-    </None>
   </ItemGroup>
 </Project>

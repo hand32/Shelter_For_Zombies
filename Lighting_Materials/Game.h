@@ -37,10 +37,11 @@ public:
 	int m_level;
 	float m_clear_points;
 	float m_points;
+	bool m_gameOver;
+
 	CHud m_hud_level;
 	CHud m_hud_points;
 	CHud m_hud_blocknum;
-	CCube *m_hud_center;
 
 	int m_nW, m_nH;
 	int m_nPosX, m_nPosY;

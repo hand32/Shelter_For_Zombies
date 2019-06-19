@@ -172,7 +172,7 @@ void CMan::Move(int nElapsedTime)
 	{
 		hp += 15 * float(nElapsedTime) / 1000;
 		m_fColor[3] = hp / 100;
-		CGame::pInstance->m_points += 3.5f * nElapsedTime / 1000;
+		CGame::pInstance->m_points += 2.0f * nElapsedTime / 1000;
 	}
 	m_fPosition[1] = 1.3f;
 }

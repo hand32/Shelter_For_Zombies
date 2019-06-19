@@ -144,8 +144,6 @@
     <ClInclude Include="Sphere.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Hud.fsl" />
-    <None Include="Hud.vsl" />
     <None Include="shadow.fsl" />
     <None Include="shadow.vsl" />
     <None Include="phong.fsl" />

@@ -32,9 +32,6 @@ CGame::CGame(int nW, int nH, int nPosX, int nPosY)
 	m_click = false;
 	m_zoomCnt = 0;
 
-	m_level = 1;
-	LevelControl();
-
 	m_bPause = false;
 
 	m_bCreated = false;
@@ -69,12 +66,10 @@ void CGame::Create(int arg, char **argc, float *fBgColor, double (*dLookAt)[3], 
 	m_nPreviousTime = m_nBaseTime;
 	m_nCurrentTime = 0;
 	m_projectionNums = glm::vec4(-26.f, 26.f, -26.f * m_nH / m_nW, 26.f * m_nH / m_nW);
-	m_hud_center = new CCube();
-	m_hud_center->SetScale(0.0f, 0.0f, 0.0f);
-	m_hud_center->m_fPosition[0] = -0.f;
-	m_hud_center->m_fPosition[1] = 5.f;
-	m_hud_center->m_fPosition[2] = 30.f;
-	//m_hud_center->m_gravity_on = false;
+
+	m_level = 1;
+	m_gameOver = false;
+
 
 	glutDisplayFunc(RenderSceneStatic);
 	glutReshapeFunc(ResizeStatic);
@@ -256,8 +251,8 @@ void CGame::RenderScene()
 	for (int i = 0; i < m_Objects_num; i++)
 		if (m_Objects[i]->m_type != MANCOLLIDER)
 			m_Objects[i]->RenderScene();
-	m_hud_center->RenderScene();
-	if (makeBrick == true)
+
+	if (makeBrick == true && !m_gameOver)
 		MakeBrick();
 
 	m_nBaseTime = glutGet(GLUT_ELAPSED_TIME);
@@ -265,11 +260,12 @@ void CGame::RenderScene()
 
 	HudDisplay();
 
-	if (m_points >= m_clear_points)
+	if (m_points >= m_clear_points && !m_gameOver)
 	{
 		m_level++;
 		LevelControl();
 	}
+
 
 	glutSwapBuffers();
 	glutPostRedisplay();
@@ -684,12 +680,12 @@ CObject* CGame::MakeBrick()
 	if (high < 8)
 		brick->SetPosition(0.0f, 10.0f, 0.0f);
 	else
-		brick->SetPosition(0.0f, high + 2, 0.0f);
+		brick->SetPosition(0.0f, high + 3.5f, 0.0f);
 	brick->SetColor(float(rand()) / RAND_MAX, float(rand()) / RAND_MAX, float(rand()) / RAND_MAX);
 	brick->m_state = CONTROL;
 	m_select_Object = brick;
 
-	if(float(rand())/ RAND_MAX <= (100.f - m_clear_points) / 100.f + 0.05f)
+	if(float(rand())/ RAND_MAX <= (1.f - m_level * 0.1f))
 	{
 		man = new CMan();
 		man->m_gravity_on = false;
@@ -708,26 +704,38 @@ CObject* CGame::MakeBrick()
 void CGame::LevelControl()
 {
 	m_points = 0;
+	if (m_level != 5)
+	{
+		for (int i = 1; i < m_Objects_num; i++)
+		{
+			delete m_Objects[i];
+		}
+		m_Objects_num = 1;
+		MakeBrick();
+	}
 	switch (m_level)
 	{
 	case 1:
 		m_blockNum = 30;
-		m_clear_points = 40;
+		m_clear_points = 150;
 		break;
 
 	case 2:
 		m_blockNum = 25;
-		m_clear_points = 60;
+		m_clear_points = 250;
 		break;
 
 	case 3:
 		m_blockNum = 20;
-		m_clear_points = 80;
+		m_clear_points = 450;
 		break;
 
 	case 4:
 		m_blockNum = 15;
-		m_clear_points = 100;
+		m_clear_points = 700;
+		break;
+	case 5:
+		m_gameOver = true;
 		break;
 	}
 }
@@ -744,8 +752,16 @@ void CGame::HudDisplay()
 
 	m_hud_points.SetColor(0.f, 0.f, 0.f);
 	m_hud_points.SetPosition(m_nW / 2 - 5, m_nH - 25);
-	sprintf(text, "%.0f", m_points);
-	m_hud_points.SetText(text);
+	if (m_gameOver)
+	{
+		sprintf(text, "");
+		m_hud_points.SetText(text);
+	}
+	else
+	{
+		sprintf(text, "%.0f", m_points);
+		m_hud_points.SetText(text);
+	}
 	m_hud_points.DisplayHud(this);
 
 	m_hud_blocknum.SetColor(0.f, 0.f, 0.f);
@@ -753,4 +769,22 @@ void CGame::HudDisplay()
 	sprintf(text, "Blocks: %d", m_blockNum);
 	m_hud_blocknum.SetText(text);
 	m_hud_blocknum.DisplayHud(this);
+
+	if (m_gameOver)
+	{
+		CHud gameOverHud;
+		if (m_level != 5)
+		{
+			gameOverHud.SetColor(1.0f, 0.1f, 0.2f);
+			sprintf(text, "--Game Over--");
+		}
+		else
+		{
+			gameOverHud.SetColor(0.1f, 1.0f, 0.2f);
+			sprintf(text, "!!Game Clear!!");
+		}
+		gameOverHud.SetPosition(m_nW / 2 - 75, m_nH - 25);
+		gameOverHud.SetText(text);
+		gameOverHud.DisplayHud(this);
+	}
 }
