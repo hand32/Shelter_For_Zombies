@@ -55,4 +55,3 @@ void CHud::DisplayHud(CGame *pGame)
 {
 	CGame::DrawBitmapText(m_Text, m_fPosition[0], m_fPosition[1], 0, m_fTextColor[0], m_fTextColor[1], m_fTextColor[2], pGame->m_nW, pGame->m_nH, true);
 }
-

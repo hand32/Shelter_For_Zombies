@@ -39,10 +39,11 @@ void CGame::DrawBitmapText(char *string, GLfloat x, GLfloat y, GLfloat z, GLfloa
 
 	if(bFixed2D)
 	{
+		glViewport(0, 0, nW, nH);
 		glMatrixMode(GL_PROJECTION);
 		glPushMatrix();
 		glLoadIdentity();
-		gluOrtho2D(0.0, 640, 0.0, 480);
+		gluOrtho2D(0.0, nW, 0.0, nH);
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
 		glLoadIdentity();
@@ -53,7 +54,7 @@ void CGame::DrawBitmapText(char *string, GLfloat x, GLfloat y, GLfloat z, GLfloa
 
 	for(c = string ; *c != '\0' ; c++) 
 	{
-		glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, *c);
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, *c);
 	}
 
 	if(bFixed2D)

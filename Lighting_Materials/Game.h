@@ -34,6 +34,13 @@ public:
 	static CGame *pInstance;
 
 	int m_blockNum;
+	int m_level;
+	float m_clear_points;
+	float m_points;
+	CHud m_hud_level;
+	CHud m_hud_points;
+	CHud m_hud_blocknum;
+	CCube *m_hud_center;
 
 	int m_nW, m_nH;
 	int m_nPosX, m_nPosY;
@@ -60,7 +67,6 @@ public:
 	glm::mat4 m_DepthProjectionMatrix;
 
 
-	CHud m_Hud;
 	static CObject *m_Objects[10000];
 	static int m_Objects_num;
 	static CObject *m_select_Object;
@@ -69,6 +75,7 @@ public:
 
 	int m_mouseX, m_mouseY;
 	bool m_click;
+	int m_zoomCnt;
 
 	CGame(int nW, int nH, int nPosX, int nPosY);
 	~CGame();
@@ -96,6 +103,8 @@ public:
 	void Mouse(int button, int state, int x, int y);
 	void MouseWheel(int button, int state, int x, int y);
 	void PassiveMotion(int x, int y);
+	void LevelControl();
+	void HudDisplay();
 
 	bool InitializeApp();
 	void ShutdownApp();

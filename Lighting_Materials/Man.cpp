@@ -155,7 +155,7 @@ void CMan::RenderShadow()
 
 void CMan::Move(int nElapsedTime)
 {
-	if (!IsInShadow() && hp > 0)
+	if (hp > 0 && !IsInShadow())
 	{
 		glm::vec3 velocity = normalize(glm::vec3(m_fVelocity[0] + (float(rand()) / RAND_MAX * 2.0f - 1.0f) * 0.2f, 0, m_fVelocity[2] + (float(rand()) / RAND_MAX * 2.0f - 1.0f) * 0.2f));
 		float theta = acosf(dot(velocity, glm::vec3(0, 0, 1)));
@@ -172,6 +172,7 @@ void CMan::Move(int nElapsedTime)
 	{
 		hp += 15 * float(nElapsedTime) / 1000;
 		m_fColor[3] = hp / 100;
+		CGame::pInstance->m_points += 3.5f * nElapsedTime / 1000;
 	}
 	m_fPosition[1] = 1.3f;
 }

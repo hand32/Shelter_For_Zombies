@@ -103,6 +103,8 @@ void CObject::SetVelocity(float fVx, float fVy, float fVz)
 
 void CObject::Translate(float fX, float fY, float fZ)
 {
+	if (m_fScale[0] == 0)
+		return;
 	if (m_fPosition[0] + fX > 20)
 		m_fPosition[0] = 20;
 	else if (m_fPosition[0] + fX < -20)
@@ -127,6 +129,8 @@ void CObject::Translate(float fX, float fY, float fZ)
 
 void CObject::Move(int nElapsedTime)
 {
+	if (m_fScale[0] == 0)
+		return;
 	if (m_fPosition[0] + nElapsedTime * m_fVelocity[0] / 1000 > 20)
 		m_fPosition[0] = 20;
 	else if (m_fPosition[0] + nElapsedTime * m_fVelocity[0] / 1000 < -20)

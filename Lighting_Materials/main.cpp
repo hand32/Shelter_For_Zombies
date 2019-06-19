@@ -4,7 +4,7 @@
 int main(int arg, char **argc)
 {
 	srand(time(NULL));
-	CGame game(640, 480, 100, 100);
+	CGame game(640, 480, 500, 100);
 	
 	float fBgColor[4] = {0.9f, 1.0f, 0.9f};
 	double dLookAt[3][3] = {{22, 18, 22}, {0, 0, 0}, {0, 1, 0}};

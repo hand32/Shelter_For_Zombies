@@ -10,6 +10,7 @@ public:
 	float m_fPosition[2];
 	float m_fTextColor[3];
 	char m_Text[MAX_TEXT];
+	GLuint bufferID;
 
 	CHud();
 	CHud(float *fPosition, float *fTextColor);

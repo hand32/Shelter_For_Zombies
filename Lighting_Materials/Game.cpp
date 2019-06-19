@@ -7,6 +7,9 @@
 #include "Game.h"
 #include "LoadObj.h"
 #include "Bmp.h"
+#include <string>
+#include <cstdlib>
+#include <glm/glm.hpp>
 
 enum
 {
@@ -27,6 +30,10 @@ CGame::CGame(int nW, int nH, int nPosX, int nPosY)
 	m_mouseX = -1;
 	m_mouseY = -1;
 	m_click = false;
+	m_zoomCnt = 0;
+
+	m_level = 1;
+	LevelControl();
 
 	m_bPause = false;
 
@@ -54,14 +61,20 @@ void CGame::Create(int arg, char **argc, float *fBgColor, double (*dLookAt)[3], 
 
 	glutInit(&arg, argc);
 	glutCreateWindow("Shelter For Zombies");
-
+	
 	glewInit();
 
 	m_nFrame = 0;
 	m_nBaseTime = glutGet(GLUT_ELAPSED_TIME); 
 	m_nPreviousTime = m_nBaseTime;
 	m_nCurrentTime = 0;
-	m_projectionNums = glm::vec4(-24.f, 24.f, -18.f, 18.f);
+	m_projectionNums = glm::vec4(-26.f, 26.f, -26.f * m_nH / m_nW, 26.f * m_nH / m_nW);
+	m_hud_center = new CCube();
+	m_hud_center->SetScale(0.0f, 0.0f, 0.0f);
+	m_hud_center->m_fPosition[0] = -0.f;
+	m_hud_center->m_fPosition[1] = 5.f;
+	m_hud_center->m_fPosition[2] = 30.f;
+	//m_hud_center->m_gravity_on = false;
 
 	glutDisplayFunc(RenderSceneStatic);
 	glutReshapeFunc(ResizeStatic);
@@ -120,7 +133,8 @@ void CGame::Create(int arg, char **argc, float *fBgColor, double (*dLookAt)[3], 
 	newCube->material.specular[2] = 0.1f;
 	newCube->material.shininess = 20000.0f;
 	*/
-	
+
+	LevelControl();
 	MakeBrick();
 
 	m_bFullscreen = false;
@@ -242,12 +256,20 @@ void CGame::RenderScene()
 	for (int i = 0; i < m_Objects_num; i++)
 		if (m_Objects[i]->m_type != MANCOLLIDER)
 			m_Objects[i]->RenderScene();
-
+	m_hud_center->RenderScene();
 	if (makeBrick == true)
 		MakeBrick();
 
 	m_nBaseTime = glutGet(GLUT_ELAPSED_TIME);
+	m_Glsl[0].Stop();
 
+	HudDisplay();
+
+	if (m_points >= m_clear_points)
+	{
+		m_level++;
+		LevelControl();
+	}
 
 	glutSwapBuffers();
 	glutPostRedisplay();
@@ -258,6 +280,13 @@ void CGame::Resize(int width, int height)
 	m_nW = width;
 	m_nH = height;
 	glViewport(0, 0, width, height);
+	m_projectionNums = glm::vec4(-26.f, 26.f, -26.f * m_nH / m_nW, 26.f * m_nH / m_nW);
+
+	glm::vec2 normalized = glm::normalize(glm::vec2(m_nW, m_nH));
+	m_projectionNums.x += normalized.x * m_zoomCnt;
+	m_projectionNums.y -= normalized.x * m_zoomCnt;
+	m_projectionNums.z += normalized.y * m_zoomCnt;
+	m_projectionNums.w -= normalized.y * m_zoomCnt;
 }
 
 void CGame::KeyDown(unsigned char key, int x, int y)
@@ -357,7 +386,7 @@ void CGame::MouseWheel(int button, int state, int x, int y)
 		if (m_dLookAt[0][1] > 3.0f)
 		{
 			m_dLookAt[0][1] -= 0.7f;
-			printf("%d", glutGet(GLUT_WINDOW_WIDTH));
+			m_zoomCnt++;
 			glm::vec2 normalized = glm::normalize(glm::vec2(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT)));
 			m_projectionNums.x += normalized.x;
 			m_projectionNums.y -= normalized.x;
@@ -370,6 +399,7 @@ void CGame::MouseWheel(int button, int state, int x, int y)
 		if (m_dLookAt[0][1] < 30.f)
 		{
 			m_dLookAt[0][1] += 0.7f;
+			m_zoomCnt--;
 			glm::vec2 normalized = glm::normalize(glm::vec2(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT)));
 			m_projectionNums.x -= normalized.x;
 			m_projectionNums.y += normalized.x;
@@ -432,6 +462,10 @@ bool CGame::InitializeApp()
 	m_Glsl[1].Compile("shadow.vsl", GAME_GL_VERTEX);
 	m_Glsl[1].Compile("shadow.fsl", GAME_GL_FRAGMENT);
 	m_Glsl[1].Link();
+
+	m_Glsl[2].Compile("Hud.vsl", GAME_GL_VERTEX);
+	m_Glsl[2].Compile("Hud.fsl", GAME_GL_FRAGMENT);
+	m_Glsl[2].Link();
 
 	const double PI = 3.14159;
 	int slice, stack;
@@ -575,6 +609,13 @@ bool CGame::InitializeApp()
 	delete[] cubeVertex;
 	delete[] cubeNormal;
 
+	GLuint HudHandles[3];
+	glGenBuffers(3, HudHandles);
+	m_hud_blocknum.bufferID = HudHandles[0];
+	m_hud_level.bufferID = HudHandles[1];
+	m_hud_points.bufferID = HudHandles[2];
+	
+
 	//////////////////////////////////////////////////////////////////
 	// For Shadow
 	glGenFramebuffers(1, &m_frameBuffer);
@@ -611,6 +652,8 @@ void CGame::ShutdownApp()
 
 CObject* CGame::MakeBrick()
 {
+	if (m_blockNum <= 0)
+		return NULL;
 	CObject* brick = NULL;
 	CSphere* sphere;
 	CCube* cube;
@@ -622,19 +665,19 @@ CObject* CGame::MakeBrick()
 	case SPHERE:
 		brick = new CSphere();
 		brick->GetRealClass(sphere, cube, man);
-		sphere->SetRadius((float(rand()) / RAND_MAX) * 0.35f + 0.5f);
+		sphere->SetRadius((float(rand()) / RAND_MAX) * 0.6f + 0.7f);
 		break;
 	case CUBE:
 		brick = new CCube();
-		brick->SetScale(float(rand()) / RAND_MAX + 0.6f,
-			float(rand()) / RAND_MAX + 0.6f, float(rand()) / RAND_MAX + 0.6f);
+		brick->SetScale(float(rand()) / RAND_MAX + 1.2f,
+			float(rand()) / RAND_MAX + 1.2f, float(rand()) / RAND_MAX + 1.2f);
 		break;
 	}
 
 	float high = 0.0f;
 	for (int i = 0; i < m_Objects_num; i++)
 	{
-		if (high < m_Objects[i]->m_fPosition[1])
+		if (high < m_Objects[i]->m_fPosition[1] && m_Objects[i]->m_fScale[0] >0)
 			high = m_Objects[i]->m_fPosition[1];
 	}
 	brick->m_gravity_on = false;
@@ -646,13 +689,68 @@ CObject* CGame::MakeBrick()
 	brick->m_state = CONTROL;
 	m_select_Object = brick;
 
-	man = new CMan();
-	man->m_gravity_on = false;
-	man->SetPosition((float(rand()) / RAND_MAX * 2 - 1) * 10, 1.3f, (float(rand()) / RAND_MAX * 2 - 1) * 10);
-	man->SetColor(float(rand()) / RAND_MAX / 2 + 0.5f, float(rand()) / RAND_MAX * 0.5f, float(rand()) / RAND_MAX * 0.5f);
-	man->SetScale(0.2f, 0.2f, 0.2f);
-	man->SetRotation(float(rand()) / RAND_MAX * 3.141592f, 0.0f, 1.0f, 0.0f);
-	man->m_state = ZOMBIE;
+	if(float(rand())/ RAND_MAX <= (100.f - m_clear_points) / 100.f + 0.05f)
+	{
+		man = new CMan();
+		man->m_gravity_on = false;
+		man->SetPosition((float(rand()) / RAND_MAX * 2 - 1) * 10, 1.3f, (float(rand()) / RAND_MAX * 2 - 1) * 10);
+		man->SetColor(float(rand()) / RAND_MAX / 2 + 0.5f, float(rand()) / RAND_MAX * 0.5f, float(rand()) / RAND_MAX * 0.5f);
+		man->SetScale(0.2f, 0.2f, 0.2f);
+		man->SetRotation(float(rand()) / RAND_MAX * 3.141592f, 0.0f, 1.0f, 0.0f);
+		man->m_state = ZOMBIE;
+	}
 	
+	m_blockNum--;
+
 	return brick;
+}
+
+void CGame::LevelControl()
+{
+	m_points = 0;
+	switch (m_level)
+	{
+	case 1:
+		m_blockNum = 30;
+		m_clear_points = 40;
+		break;
+
+	case 2:
+		m_blockNum = 25;
+		m_clear_points = 60;
+		break;
+
+	case 3:
+		m_blockNum = 20;
+		m_clear_points = 80;
+		break;
+
+	case 4:
+		m_blockNum = 15;
+		m_clear_points = 100;
+		break;
+	}
+}
+
+void CGame::HudDisplay()
+{
+	char text[100];
+
+	m_hud_level.SetColor(0.f, 0.f, 0.f);
+	m_hud_level.SetPosition(10.f, m_nH - 25);
+	sprintf(text, "Level: %d", m_level);
+	m_hud_level.SetText(text);
+	m_hud_level.DisplayHud(this);
+
+	m_hud_points.SetColor(0.f, 0.f, 0.f);
+	m_hud_points.SetPosition(m_nW / 2 - 5, m_nH - 25);
+	sprintf(text, "%.0f", m_points);
+	m_hud_points.SetText(text);
+	m_hud_points.DisplayHud(this);
+
+	m_hud_blocknum.SetColor(0.f, 0.f, 0.f);
+	m_hud_blocknum.SetPosition(m_nW - 100, m_nH - 25);
+	sprintf(text, "Blocks: %d", m_blockNum);
+	m_hud_blocknum.SetText(text);
+	m_hud_blocknum.DisplayHud(this);
 }
