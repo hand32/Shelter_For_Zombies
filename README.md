@@ -2,9 +2,4 @@
 
 OpenGL, GLSL Project.
 
-Main Implement
- Phong Shading
- Shadow Mapping
- Collision
- RayCast
- objLoader
+Main Implement - Phong Shading, Shadow Mapping, Collision, RayCast, objLoader.
