@@ -24,6 +24,10 @@ CGame::CGame(int nW, int nH, int nPosX, int nPosY)
 	m_nPosX = nPosX;
 	m_nPosY = nPosY;
 
+	m_mouseX = -1;
+	m_mouseY = -1;
+	m_click = false;
+
 	m_bPause = false;
 
 	m_bCreated = false;
@@ -65,6 +69,7 @@ void CGame::Create(int arg, char **argc, float *fBgColor, double (*dLookAt)[3], 
 	glutSpecialFunc(SpecialInputStatic);
 	glutMouseFunc(MouseStatic);
 	glutMouseWheelFunc(MouseWheelStatic);
+	glutMotionFunc(PassiveMotionStatic);
 
 	atexit(ShutdownAppStatic);
 
@@ -85,8 +90,6 @@ void CGame::Create(int arg, char **argc, float *fBgColor, double (*dLookAt)[3], 
 	CCube *newCube = new CCube();
 	newCube->SetPosition(2.0f, 0.0f, 2.0f);
 	newCube->SetScale(45.0f, 2.0f, 45.0f);
-	//newCube->SetScale(20.0f, 1.0f, 1.0f);
-	//newCube->SetRadius(10);
 	newCube->SetColor(1.0f, 1.0f, 1.0f);;
 	newCube->m_gravity_on = false;
 	newCube->material.specular[0] = 0.1f;
@@ -94,29 +97,31 @@ void CGame::Create(int arg, char **argc, float *fBgColor, double (*dLookAt)[3], 
 	newCube->material.specular[2] = 0.1f;
 	newCube->material.shininess = 20000.0f;
 	newCube->m_state = GROUND;
-	
-	
 
 	/*
-	m_select_Object = NULL;
-	CSphere *newCube = new CSphere();
-	newCube->SetPosition(2.0f, 0.0f, 2.0f);
-	newCube->SetRadius(10);
-	newCube->SetColor(1.0f, 1.0f, 1.0f);;
+	CMan *newMan = new CMan();
+	newMan->m_gravity_on = false;
+	newMan->SetPosition(2, 1.f, 2);
+	newMan->SetColor(float(rand()) / RAND_MAX, float(rand()) / RAND_MAX, float(rand()) / RAND_MAX);
+	newMan->SetScale(0.2f, 0.2f, 0.2f);
+	newMan->SetRotation(3.141592, 0.0f, 1.0f, 0.0f);
+	newMan->m_state = ZOMBIE;
+	*/
+
+	/*
+	newCube = new CCube();
+	newCube->m_state = BUILDING;
+	newCube->SetPosition(0.0f, 5.0f, 0.0f);
+	newCube->SetColor(1.0f, 1.0f, 1.0f);
+	newCube->SetScale(5.0f, 10.0f, 5.0f);
 	newCube->m_gravity_on = false;
 	newCube->material.specular[0] = 0.1f;
 	newCube->material.specular[1] = 0.1f;
 	newCube->material.specular[2] = 0.1f;
 	newCube->material.shininess = 20000.0f;
-	newCube->m_state = GROUND;
 	*/
 	
-	
-	
-
 	MakeBrick();
-
-	
 
 	m_bFullscreen = false;
 
@@ -150,36 +155,68 @@ void CGame::RenderScene()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glClearColor(m_fBgColor[0], m_fBgColor[1], m_fBgColor[2], m_fBgColor[3]);
 
+	m_worldLight.Position = glm::vec4(50.0 * cos(m_nCurrentTime / 4000.0), 30.0, 50.0 * sin(m_nCurrentTime / 4000.0), 1.0);
+	
+	//m_worldLight.Position = glm::vec4(50.0 * cos(100 / 800.0), 30.0, 50.0 * sin(100 / 800.0), 1.0);
+	m_worldLight.La = glm::vec3(0.3f, 0.3f, 0.3f);
+	m_worldLight.Ld = glm::vec3(1.0f, 1.0f, 1.0f);
+	m_worldLight.Ls = glm::vec3(1.0f, 1.0f, 1.0f);
+
 	m_View = glm::lookAt(glm::vec3(m_dLookAt[0][0], m_dLookAt[0][1], m_dLookAt[0][2]),
 		glm::vec3(m_dLookAt[1][0], m_dLookAt[1][1], m_dLookAt[1][2]),
 		glm::vec3(m_dLookAt[2][0], m_dLookAt[2][1], m_dLookAt[2][2]));
 	m_ProjectionMatrix =
 		glm::ortho(m_projectionNums.x, m_projectionNums.y, m_projectionNums.z, m_projectionNums.w,
 			-10.0f, 100.0f);
-	
-
-	m_worldLight.Position = glm::vec4(50.0 * cos(m_nCurrentTime / 800.0), 30.0, 50.0 * sin(m_nCurrentTime / 800.0), 1.0);
-	//m_worldLight.Position = glm::vec4(50.0 * cos(100 / 800.0), 30.0, 50.0 * sin(100 / 800.0), 1.0);
-	m_worldLight.La = glm::vec3(0.3f, 0.3f, 0.3f);
-	m_worldLight.Ld = glm::vec3(1.0f, 1.0f, 1.0f);
-	m_worldLight.Ls = glm::vec3(1.0f, 1.0f, 1.0f);
+	m_DepthProjectionMatrix =
+		glm::ortho(-26.f, 26.f, -20.f, 20.f, -10.0f, 100.f);
 
 	bool makeBrick = false;
+	bool *collideCheck = new bool[m_Objects_num*m_Objects_num];
+	for (int i = 0; i < m_Objects_num*m_Objects_num; i++)
+		collideCheck[i] = false;
 	for (int i = 0; i < m_Objects_num; i++)
 	{
 		for (int j = 0; j < m_Objects_num; j++)
 		{
-			if (i != j && m_Objects[i]->m_type != MAN && m_Objects[j]->m_type != MAN &&
+			if (i != j && collideCheck[i * m_Objects_num +j] == false &&
 				m_Objects[i]->m_state != CONTROL && m_Objects[j]->m_state != CONTROL)
 			{
+				CSphere *sphere = NULL;
+				CCube *cube = NULL;
+				CMan *man = NULL;
 				if (m_Objects[i]->Collide(m_Objects[j]) == true)
 				{
-					m_Objects[i]->m_gravity_on = false;
-					m_Objects[j]->m_gravity_on = false;
-					m_Objects[i]->SetVelocity(0.0f, 0.0f, 0.0f);
-					m_Objects[j]->SetVelocity(0.0f, 0.0f, 0.0f);
-					if (m_Objects[i] == m_select_Object || m_Objects[j] == m_select_Object)
-						makeBrick = true;
+					collideCheck[i*m_Objects_num + j] = true;
+					//collideCheck[j*m_Objects_num + i] = true;
+					if (m_Objects[i]->m_type != MAN && m_Objects[i]->m_type != MANCOLLIDER)
+					{
+						m_Objects[i]->m_gravity_on = false;
+						m_Objects[i]->SetVelocity(0.0f, 0.0f, 0.0f);
+						if (m_Objects[i] == m_select_Object)
+							makeBrick = true;
+					}
+					if(m_Objects[j]->m_type != MAN && m_Objects[i]->m_type != MANCOLLIDER)
+					{
+						m_Objects[j]->m_gravity_on = false;
+						m_Objects[j]->SetVelocity(0.0f, 0.0f, 0.0f);
+						if (m_Objects[j] == m_select_Object)
+							makeBrick = true;
+					}
+					if (m_Objects[i]->m_type == MAN)
+					{
+						m_Objects[i]->GetRealClass(sphere, cube, man);
+						m_Objects[i]->m_fPosition[0] = man->m_Collider->m_fPosition[0];
+						m_Objects[i]->m_fPosition[1] = man->m_Collider->m_fPosition[1] - man->m_fScale[1] * 5;
+						m_Objects[i]->m_fPosition[2] = man->m_Collider->m_fPosition[2];
+					}
+					if (m_Objects[j]->m_type == MAN)
+					{
+						m_Objects[j]->GetRealClass(sphere, cube, man);
+						m_Objects[j]->m_fPosition[0] = man->m_Collider->m_fPosition[0];
+						m_Objects[j]->m_fPosition[1] = man->m_Collider->m_fPosition[1] - man->m_fScale[1] * 5;
+						m_Objects[j]->m_fPosition[2] = man->m_Collider->m_fPosition[2];
+					}
 					break;
 				}
 			}
@@ -187,13 +224,15 @@ void CGame::RenderScene()
 		m_Objects[i]->Gravity(nElapsedTime);
 		m_Objects[i]->Move(nElapsedTime);
 	}
+	delete[] collideCheck;
 	glBindFramebuffer(GL_FRAMEBUFFER, CGame::pInstance->m_frameBuffer);
 	//glEnable(GL_CULL_FACE);
 	//glCullFace(GL_BACK);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	m_Glsl[1].Use();
 	for (int i = 0; i < m_Objects_num; i++)
-		m_Objects[i]->RenderShadow();
+		if(m_Objects[i]->m_type != MANCOLLIDER)
+			m_Objects[i]->RenderShadow();
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	//glEnable(GL_CULL_FACE);
@@ -201,15 +240,24 @@ void CGame::RenderScene()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	m_Glsl[0].Use();
 	for (int i = 0; i < m_Objects_num; i++)
-		m_Objects[i]->RenderScene();
+		if (m_Objects[i]->m_type != MANCOLLIDER)
+			m_Objects[i]->RenderScene();
 
 	if (makeBrick == true)
 		MakeBrick();
 
 	m_nBaseTime = glutGet(GLUT_ELAPSED_TIME);
 
+
 	glutSwapBuffers();
 	glutPostRedisplay();
+}
+
+void CGame::Resize(int width, int height)
+{
+	m_nW = width;
+	m_nH = height;
+	glViewport(0, 0, width, height);
 }
 
 void CGame::KeyDown(unsigned char key, int x, int y)
@@ -284,13 +332,22 @@ void CGame::SpecialInput(int key, int x, int y)
 	}
 }
 
-void CGame::Resize(int width, int height)
-{
-	glViewport(0, 0, width, height);
-}
 
 void CGame::Mouse(int button, int state, int x, int y)
 {
+	if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+	{
+		m_click = true;
+	}
+	else if (button == GLUT_LEFT_BUTTON && state == GLUT_UP)
+	{
+		if (m_select_Object != NULL)
+		{
+			m_select_Object->m_gravity_on = true;
+			m_select_Object->m_state = BUILDING;
+		}
+		m_click = false;
+	}
 }
 
 void CGame::MouseWheel(int button, int state, int x, int y)
@@ -322,6 +379,21 @@ void CGame::MouseWheel(int button, int state, int x, int y)
 	}
 }
 
+void CGame::PassiveMotion(int x, int y)
+{
+	if (m_click == true && m_mouseX != -1 && m_mouseY != -1 && !(m_mouseX == x && m_mouseY == y))
+	{
+		glm::vec3 vx = glm::vec3(x - m_mouseX, 0, -(x-m_mouseX));
+		glm::vec3 vy = glm::vec3(y - m_mouseY, 0, y - m_mouseY);
+		glm::vec3 move = normalize(vx+vy) * 0.2f;
+		if (m_select_Object != NULL)
+			if (m_select_Object->m_gravity_on == false)
+				m_select_Object->Translate(move.x, 0.0f, move.z);
+	}
+	m_mouseX = x;
+	m_mouseY = y;
+}
+
 void InputVertex(int* index, GLfloat* array, const GLfloat* vertex)
 {
 	array[*index] = vertex[0];
@@ -345,6 +417,7 @@ bool CGame::InitializeApp()
 	glDepthFunc(GL_LESS);
 
 	// Cull triangles which normal is not towards the camera
+	
 	glEnable(GL_CULL_FACE);
 
 	if (!LoadObj("man.obj", &positionData, &m_nMan_VertexCnt, &normalData))
@@ -507,9 +580,11 @@ bool CGame::InitializeApp()
 	glGenFramebuffers(1, &m_frameBuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, m_frameBuffer);
 
+	m_shadowW = 2048;
+	m_shadowH = 2048;
 	glGenTextures(1, &m_depthTexture);
 	glBindTexture(GL_TEXTURE_2D, m_depthTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, 1024, 1024, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, m_shadowW, m_shadowH, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -547,27 +622,36 @@ CObject* CGame::MakeBrick()
 	case SPHERE:
 		brick = new CSphere();
 		brick->GetRealClass(sphere, cube, man);
-		sphere->SetRadius((float(rand()) / RAND_MAX) * 0.35f + 0.35f);
+		sphere->SetRadius((float(rand()) / RAND_MAX) * 0.35f + 0.5f);
 		break;
 	case CUBE:
 		brick = new CCube();
-		brick->SetScale(float(rand()) / RAND_MAX + 0.5f,
-			float(rand()) / RAND_MAX + 0.5f, float(rand()) / RAND_MAX + 0.5f);
+		brick->SetScale(float(rand()) / RAND_MAX + 0.6f,
+			float(rand()) / RAND_MAX + 0.6f, float(rand()) / RAND_MAX + 0.6f);
 		break;
 	}
 
+	float high = 0.0f;
+	for (int i = 0; i < m_Objects_num; i++)
+	{
+		if (high < m_Objects[i]->m_fPosition[1])
+			high = m_Objects[i]->m_fPosition[1];
+	}
 	brick->m_gravity_on = false;
-	brick->SetPosition(0.0f, 10.0f, 0.0f);
+	if (high < 8)
+		brick->SetPosition(0.0f, 10.0f, 0.0f);
+	else
+		brick->SetPosition(0.0f, high + 2, 0.0f);
 	brick->SetColor(float(rand()) / RAND_MAX, float(rand()) / RAND_MAX, float(rand()) / RAND_MAX);
 	brick->m_state = CONTROL;
 	m_select_Object = brick;
 
 	man = new CMan();
 	man->m_gravity_on = false;
-	man->SetPosition((float(rand()) / RAND_MAX * 2 - 1) * 10, 1.f, (float(rand()) / RAND_MAX * 2 - 1) * 10);
-	man->SetColor(float(rand()) / RAND_MAX, float(rand()) / RAND_MAX, float(rand()) / RAND_MAX);
+	man->SetPosition((float(rand()) / RAND_MAX * 2 - 1) * 10, 1.3f, (float(rand()) / RAND_MAX * 2 - 1) * 10);
+	man->SetColor(float(rand()) / RAND_MAX / 2 + 0.5f, float(rand()) / RAND_MAX * 0.5f, float(rand()) / RAND_MAX * 0.5f);
 	man->SetScale(0.2f, 0.2f, 0.2f);
-	man->SetRotation(float(rand()) / RAND_MAX * 360.f, 0.0f, 1.0f, 0.0f);
+	man->SetRotation(float(rand()) / RAND_MAX * 3.141592f, 0.0f, 1.0f, 0.0f);
 	man->m_state = ZOMBIE;
 	
 	return brick;

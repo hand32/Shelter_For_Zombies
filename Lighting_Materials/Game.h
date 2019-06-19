@@ -33,6 +33,8 @@ public:
 	static int nInstanceCnt;
 	static CGame *pInstance;
 
+	int m_blockNum;
+
 	int m_nW, m_nH;
 	int m_nPosX, m_nPosY;
 	bool m_bCreated;
@@ -53,15 +55,20 @@ public:
 	glm::mat4 m_View;
 
 	GLuint m_frameBuffer, m_depthTexture;
+	int m_shadowW, m_shadowH;
 	LightInfo m_worldLight;
+	glm::mat4 m_DepthProjectionMatrix;
 
 
 	CHud m_Hud;
-	static CObject *m_Objects[100];
+	static CObject *m_Objects[10000];
 	static int m_Objects_num;
 	static CObject *m_select_Object;
 	GLfloat *m_man_Vertex, *m_man_Normal;
 	int m_nMan_VertexCnt, m_nSphere_VertexCnt, m_nCube_VertexCnt;
+
+	int m_mouseX, m_mouseY;
+	bool m_click;
 
 	CGame(int nW, int nH, int nPosX, int nPosY);
 	~CGame();
@@ -77,6 +84,7 @@ public:
 	static void ResizeStatic(int width, int height);
 	static void MouseStatic(int button, int state, int x, int y);
 	static void MouseWheelStatic(int button, int state, int x, int y);
+	static void PassiveMotionStatic(int x, int y);
 	static void ShutdownAppStatic();
 
 	void Create(int arg, char **argc, float *fBgColor, double (*dLookAt)[3], bool bVSync);
@@ -87,6 +95,7 @@ public:
 	void Resize(int width, int height);
 	void Mouse(int button, int state, int x, int y);
 	void MouseWheel(int button, int state, int x, int y);
+	void PassiveMotion(int x, int y);
 
 	bool InitializeApp();
 	void ShutdownApp();

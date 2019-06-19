@@ -9,15 +9,15 @@ class CMan;
 enum Type {
 	SPHERE,
 	CUBE,
-	MAN
+	MAN,
+	MANCOLLIDER
 };
 
 enum State {
 	BUILDING,
 	GROUND,
 	CONTROL,
-	ZOMBIE,
-	HUMAN
+	ZOMBIE
 };
 struct Material {
 	float specular[3];
@@ -34,7 +34,7 @@ public:
 
 	float m_fPosition[3];
 	float m_fScale[3];
-	float m_fColor[3];
+	float m_fColor[4];
 	float m_fVelocity[3];
 	float m_fAngle[4];
 
@@ -45,22 +45,28 @@ public:
 	CObject(float *fPosition, float *fScale, float *fColor, float *fvelocity);
 	~CObject();
 
-	void SetPosition(float fX, float fY, float fZ);
-	void SetScale(float fX, float fY, float fZ);
-	void SetRotation(float fAngle, float fX, float fY, float fZ);
-	void SetColor(float fR, float fG, float fB);
-	void SetVelocity(float fVx, float fVy, float fVz);
+	virtual void SetPosition(float fX, float fY, float fZ);
+	virtual void SetScale(float fX, float fY, float fZ);
+	virtual void SetRotation(float fAngle, float fX, float fY, float fZ);
+	virtual void SetColor(float fR, float fG, float fB);
+	virtual void SetVelocity(float fVx, float fVy, float fVz);
 
 	void Translate(float fX, float fY, float fZ);
 
 	float GetDistance(CObject *other);
 
 	//Velocity 따라 이동.
-	void Move(int nElapsedTime);
+	virtual void Move(int nElapsedTime);
+
 	//현재 설정에 따라 중력 적용.
 	void Gravity(int nElapsedTime);
+
 	//각 Object 특성에 따라 충돌판정함.
 	bool Collide(CObject *other);
+
+	bool CObject::RayCast(float x1, float y1, float z1, float x2, float y2, float z2);
+	static bool RayCast(float x1, float y1, float z1, float x2, float y2, float z2, CObject* object);
+
 	//각 Object 특성에 따라 Render 함.
 	virtual void RenderScene() = 0;
 	virtual void RenderShadow() = 0;

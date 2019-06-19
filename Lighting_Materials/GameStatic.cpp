@@ -9,7 +9,7 @@
 int CGame::nInstanceCnt = 0;
 CGame* CGame::pInstance = NULL;
 
-CObject* CGame::m_Objects[100];
+CObject* CGame::m_Objects[10000];
 int CGame::m_Objects_num = 0;
 CObject* CGame::m_select_Object;
 
@@ -137,6 +137,12 @@ void CGame::MouseWheelStatic(int button, int state, int x, int y)
 {
 	if (pInstance)
 		pInstance->MouseWheel(button, state, x, y);
+}
+
+void CGame::PassiveMotionStatic(int x, int y)
+{
+	if (pInstance)
+		pInstance->PassiveMotion(x, y);
 }
 
 void CGame::ShutdownAppStatic()

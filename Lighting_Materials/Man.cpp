@@ -3,17 +3,46 @@
 
 CMan::CMan() : CObject()
 {
+	m_Collider = new CCube();
+	m_Collider->m_type = MANCOLLIDER;
+	m_Collider->m_gravity_on = false;
 	m_type = MAN;
+	hp = 100;
 }
 
 CMan::CMan(float *fPosition, float *fScale, float *fColor, float *fVelocity, State character)
 	: CObject(fPosition, fScale, fColor, fVelocity)
 {
+	m_Collider = new CCube();
+	m_Collider->m_type = MANCOLLIDER;
+	m_Collider->m_gravity_on = false;
 	m_state = character;
 	m_type = MAN;
+	hp = 100;
 }
 
 CMan::~CMan() {}
+
+void CMan::SetPosition(float fX, float fY, float fZ)
+{
+	CObject::SetPosition(fX, fY, fZ);
+	m_Collider->SetPosition(m_fPosition[0], m_fPosition[1] + m_fScale[1] * 5, m_fPosition[2]);
+}
+void CMan::SetScale(float fX, float fY, float fZ)
+{
+	CObject::SetScale(fX, fY, fZ);
+	m_Collider->SetScale(m_fScale[0] * 5, m_fScale[1] * 12, m_fScale[2] * 3);
+}
+void CMan::SetRotation(float fAngle, float fX, float fY, float fZ)
+{
+	CObject::SetRotation(fAngle, fX, fY, fZ);
+	m_Collider->SetRotation(m_fAngle[0], m_fAngle[1], m_fAngle[2], m_fAngle[3]);
+}
+void CMan::SetVelocity(float fVx, float fVy, float fVz)
+{
+	CObject::SetVelocity(fVx, fVy, fVz);
+	m_Collider->SetVelocity(m_fVelocity[0], m_fVelocity[1], m_fVelocity[2]);
+}
 
 void CMan::GetRealClass(CSphere*& sphere, CCube*& cube, CMan*& man)
 {
@@ -38,7 +67,7 @@ void CMan::RenderScene()
 	glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(m_fScale[0], m_fScale[1], m_fScale[2]));
 	glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), m_fAngle[0], glm::vec3(m_fAngle[1], m_fAngle[2], m_fAngle[3]));
 	glm::mat4 translate = glm::translate(glm::mat4(1.0f), glm::vec3(m_fPosition[0], m_fPosition[1], m_fPosition[2]));
-	Model = rotate * translate * scale * Model;
+	Model = translate * rotate * scale * Model;
 
 	glm::mat4 MV = m_View * Model;
 	glm::mat4 m_Mvp;
@@ -58,11 +87,11 @@ void CMan::RenderScene()
 			glm::vec3(0., 0., 0.),
 			glm::vec3(0., 1., 0.));
 	glm::mat4 depthModel = glm::mat4(1.0f);
-	depthModel = rotate * translate * scale * depthModel;
-	glm::mat4 depthProjection = m_ProjectionMatrix;
-	glm::mat4 depthMVP = m_ProjectionMatrix * depthView * depthModel;
+	depthModel = translate * rotate * scale * depthModel;
+	glm::mat4 depthProjection = CGame::pInstance->m_DepthProjectionMatrix;
+	glm::mat4 depthMVP = depthProjection * depthView * depthModel;
 	glm::mat4 depthBiasMVP = biasMatrix * depthMVP;
-	//glViewport(0, 0, (CGame::pInstance->m_nW), CGame::pInstance->m_nH);
+
 	m_Glsl->UniformMatrix4fv("MVP", &m_Mvp[0][0]);
 	m_Glsl->UniformMatrix4fv("ProjectionMatrix", &m_ProjectionMatrix[0][0]);
 	m_Glsl->UniformMatrix4fv("ModelViewMatrix", &MV[0][0]);
@@ -70,9 +99,9 @@ void CMan::RenderScene()
 
 	glm::vec4 LightPosition = m_View * worldlight.Position;
 	m_Glsl->Uniform4f("Light.Position", LightPosition[0], LightPosition[1], LightPosition[2], LightPosition[3]);
-	m_Glsl->Uniform3f("Material.Kd", m_fColor[0], m_fColor[1], m_fColor[2]);
+	m_Glsl->Uniform3f("Material.Kd", m_fColor[0] * m_fColor[3], m_fColor[1] * m_fColor[3], m_fColor[2] * m_fColor[3]);
 	m_Glsl->Uniform3f("Light.Ld", worldlight.Ld[0], worldlight.Ld[1], worldlight.Ld[2]);
-	m_Glsl->Uniform3f("Material.Ka", m_fColor[0], m_fColor[1], m_fColor[2]);
+	m_Glsl->Uniform3f("Material.Ka", m_fColor[0] * m_fColor[3], m_fColor[1] * m_fColor[3], m_fColor[2] * m_fColor[3]);
 	m_Glsl->Uniform3f("Light.La", worldlight.La[0], worldlight.La[1], worldlight.La[2]);
 	m_Glsl->Uniform3f("Material.Ks", material.specular[0], material.specular[1], material.specular[2]);
 	m_Glsl->Uniform3f("Light.Ls", worldlight.Ls[0], worldlight.Ls[1], worldlight.Ls[2]);
@@ -86,19 +115,16 @@ void CMan::RenderScene()
 	glBindVertexArray(CGame::pInstance->m_VaoHandle);
 	glDrawArrays(GL_TRIANGLES, 0, CGame::pInstance->m_nMan_VertexCnt);
 	glBindVertexArray(0);
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
+	
 }
 
 void CMan::RenderShadow()
 {
 	glDisable(GL_CULL_FACE);
-	glViewport(0, 0, 1024, 1024);
+	glViewport(0, 0, CGame::pInstance->m_shadowW, CGame::pInstance->m_shadowH);
 	CGLSLProgram* m_Glsl;
 	m_Glsl = &CGame::pInstance->m_Glsl[1];
 	LightInfo worldlight = CGame::pInstance->m_worldLight;
-
-	glm::mat4 m_ProjectionMatrix = CGame::pInstance->m_ProjectionMatrix;
 
 	glm::mat4 biasMatrix{
 		0.5, 0.0, 0.0, 0.0,
@@ -114,17 +140,53 @@ void CMan::RenderShadow()
 	glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(m_fScale[0], m_fScale[1], m_fScale[2]));
 	glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), m_fAngle[0], glm::vec3(m_fAngle[1], m_fAngle[2], m_fAngle[3]));
 	glm::mat4 translate = glm::translate(glm::mat4(1.0f), glm::vec3(m_fPosition[0], m_fPosition[1], m_fPosition[2]));
-	depthModel = rotate * translate * scale * depthModel;
-	glm::mat4 depthProjection = m_ProjectionMatrix;
-	glm::mat4 depthMVP = m_ProjectionMatrix * depthView * depthModel;
-	m_Glsl->UniformMatrix4fv("depthMVP", &depthMVP[0][0]);
+	depthModel = translate * rotate * scale * depthModel;
 
+	glm::mat4 depthProjection = CGame::pInstance->m_DepthProjectionMatrix;
+	glm::mat4 depthMVP = depthProjection * depthView * depthModel;
+	m_Glsl->UniformMatrix4fv("depthMVP", &depthMVP[0][0]);
 
 	//glViewport(0, 0, (CGame::pInstance->m_nW), CGame::pInstance->m_nH);
 
 	glBindVertexArray(CGame::pInstance->m_VaoHandle);
 	glDrawArrays(GL_TRIANGLES, 0, CGame::pInstance->m_nMan_VertexCnt);
 	glBindVertexArray(0);
-	glEnable(GL_CULL_FACE);
-	glCullFace(GL_BACK);
+}
+
+void CMan::Move(int nElapsedTime)
+{
+	if (!IsInShadow() && hp > 0)
+	{
+		glm::vec3 velocity = normalize(glm::vec3(m_fVelocity[0] + (float(rand()) / RAND_MAX * 2.0f - 1.0f) * 0.2f, 0, m_fVelocity[2] + (float(rand()) / RAND_MAX * 2.0f - 1.0f) * 0.2f));
+		float theta = acosf(dot(velocity, glm::vec3(0, 0, 1)));
+		if (acosf(dot(velocity, glm::vec3(1, 0, 0))) > 3.141592f / 2)
+			theta = -theta;
+		SetRotation(theta, 0, 1, 0);
+		SetVelocity(velocity.x, 0, velocity.z);
+		CObject::Move(nElapsedTime);
+		m_Collider->SetPosition(m_fPosition[0], m_fPosition[1] + m_fScale[1] * 5, m_fPosition[2]);
+		hp -= 2 * float(nElapsedTime) / 1000;
+		m_fColor[3] = hp / 100;
+	}
+	else if(hp > 0)
+	{
+		hp += 15 * float(nElapsedTime) / 1000;
+		m_fColor[3] = hp / 100;
+	}
+	m_fPosition[1] = 1.3f;
+}
+
+bool CMan::IsInShadow()
+{
+	CGame *cgame = CGame::pInstance;
+	LightInfo light = cgame->m_worldLight;
+	for (int i = 0; i < cgame->m_Objects_num; i++)
+	{
+		if (cgame->m_Objects[i]->m_state == BUILDING && 
+			cgame->m_Objects[i]->RayCast(light.Position.x, light.Position.y, light.Position.z, m_fPosition[0], m_fPosition[1], m_fPosition[2]))
+		{
+  			return true;
+		}
+	}
+	return false;
 }

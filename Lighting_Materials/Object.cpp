@@ -24,6 +24,7 @@ CObject::CObject()
 	m_fColor[0] = 0.0f;
 	m_fColor[1] = 0.0f;
 	m_fColor[2] = 0.0f;
+	m_fColor[3] = 1.0f;
 
 	m_fScale[0] = 1.0f;
 	m_fScale[1] = 1.0f;
@@ -102,9 +103,50 @@ void CObject::SetVelocity(float fVx, float fVy, float fVz)
 
 void CObject::Translate(float fX, float fY, float fZ)
 {
-	m_fPosition[0] += fX;
-	m_fPosition[1] += fY;
-	m_fPosition[2] += fZ;
+	if (m_fPosition[0] + fX > 20)
+		m_fPosition[0] = 20;
+	else if (m_fPosition[0] + fX < -20)
+		m_fPosition[0] = -20;
+	else
+		m_fPosition[0] += fX;
+
+	if (m_fPosition[1] + fY > 30)
+		m_fPosition[1] = 30;
+	else if (m_fPosition[0] + fY < -30)
+		m_fPosition[1] = 0;
+	else
+		m_fPosition[1] += fY;
+
+	if (m_fPosition[2] + fZ > 20)
+		m_fPosition[2] = 20;
+	else if (m_fPosition[2] + fZ < -20)
+		m_fPosition[2] = -20;
+	else
+		m_fPosition[2] += fZ;
+}
+
+void CObject::Move(int nElapsedTime)
+{
+	if (m_fPosition[0] + nElapsedTime * m_fVelocity[0] / 1000 > 20)
+		m_fPosition[0] = 20;
+	else if (m_fPosition[0] + nElapsedTime * m_fVelocity[0] / 1000 < -20)
+		m_fPosition[0] = -20;
+	else
+		m_fPosition[0] += nElapsedTime * m_fVelocity[0] / 1000;
+
+	if (m_fPosition[1] + nElapsedTime * m_fVelocity[1] / 1000 > 30)
+		m_fPosition[1] = 30;
+	else if (m_fPosition[1] + nElapsedTime * m_fVelocity[1] / 1000 < -30)
+		m_fPosition[1] = 0;
+	else
+		m_fPosition[1] += nElapsedTime * m_fVelocity[1] / 1000;
+
+	if (m_fPosition[2] + nElapsedTime * m_fVelocity[2] / 1000 > 20)
+		m_fPosition[2] = 20;
+	else if (m_fPosition[2] + nElapsedTime * m_fVelocity[2] / 1000 < -20)
+		m_fPosition[2] = -20;
+	else
+		m_fPosition[2] += nElapsedTime * m_fVelocity[2] / 1000;
 }
 
 float CObject::GetDistance(CObject *other)
@@ -135,12 +177,6 @@ float GetPointDistance(glm::vec3 p1, glm::vec3 p2)
 }
 
 
-void CObject::Move(int nElapsedTime)
-{
-	m_fPosition[0] += nElapsedTime * m_fVelocity[0] / 1000;
-	m_fPosition[1] += nElapsedTime * m_fVelocity[1] / 1000;
-	m_fPosition[2] += nElapsedTime * m_fVelocity[2] / 1000;
-}
 
 void CObject::Gravity(int nElapsedTime)
 {
@@ -158,14 +194,18 @@ bool CObject::Collide(CObject *other)
 	CMan *m1, *m2;
 	this->GetRealClass(s1, c1, m1);
 	other->GetRealClass(s2, c2, m2);
+	if (m_type == MAN)
+		c1 = m1->m_Collider;
+	if (other->m_type == MAN)
+		c2 = m2->m_Collider;
 
 	if (m_type == SPHERE && other->m_type == SPHERE)
 		return Sphere_Sphere_Collide(s1, s2);
-	else if (m_type == SPHERE && other->m_type == CUBE)
+	else if (m_type == SPHERE && (other->m_type == CUBE || other->m_type == MAN))
 		return Sphere_Cube_Collide(s1, c2);
-	else if (m_type == CUBE && other->m_type == SPHERE)
+	else if ((m_type == CUBE || m_type == MAN) && other->m_type == SPHERE)
 		return Sphere_Cube_Collide(s2, c1);
-	else if (m_type == CUBE && other->m_type == CUBE)
+	else if ((m_type == CUBE || m_type == MAN) && (other->m_type == CUBE || other->m_type == MAN))
 		return Cube_Cube_Collide(c1, c2);
 
 	return false;
@@ -182,12 +222,16 @@ bool Sphere_Sphere_Collide(CSphere *sphere1, CSphere *sphere2)
 			glm::vec3 normalized = glm::normalize(glm::vec3(sphere1->m_fVelocity[0], sphere1->m_fVelocity[1], sphere1->m_fVelocity[2]));
 			glm::vec3 s1p = glm::vec3(sphere1->m_fPosition[0], sphere1->m_fPosition[1], sphere1->m_fPosition[2]);
 			glm::vec3 s2p = glm::vec3(sphere2->m_fPosition[0], sphere2->m_fPosition[1], sphere2->m_fPosition[2]);
-			while(sphere1->m_dRadius + sphere2->m_dRadius - distance > -0.01f)
+
+			if (GetPointDistance(s1p - normalized * 0.01f, s2p) > distance)
 			{
-				s1p -= normalized * 0.01f;
-				distance = GetPointDistance(s1p, s2p);
+				while (sphere1->m_dRadius + sphere2->m_dRadius - distance >= 0.01f)
+				{
+					s1p -= normalized * 0.01f;
+					distance = GetPointDistance(s1p, s2p);
+				}
+				sphere1->SetPosition(s1p.x, s1p.y, s1p.z);
 			}
-			sphere1->SetPosition(s1p.x, s1p.y, s1p.z);
 		}
 		return true;
 	}
@@ -239,12 +283,16 @@ bool Sphere_Cube_Collide(CSphere *sphere, CCube *cube)
 			glm::vec3 normalized = glm::normalize(glm::vec3(sphere->m_fVelocity[0], sphere->m_fVelocity[1], sphere->m_fVelocity[2]));
 			glm::vec3 sp = glm::vec3(sphere->m_fPosition[0], sphere->m_fPosition[1], sphere->m_fPosition[2]);
 			glm::vec3 bp = glm::vec3(box_point[0], box_point[1], box_point[2]);
-			while (sphere->m_dRadius - distance > -0.01f)
+
+			if (GetPointDistance(sp - normalized * 0.01f, bp) > distance)
 			{
-				sp -= normalized * 0.01f;
-				distance = GetPointDistance(sp, bp);
-				sphere->SetPosition(sp.x, sp.y, sp.z);
-				bp = GetBoxPoint(sphere, cube);
+				while (sphere->m_dRadius - distance >= 0.01f)
+				{
+					sp -= normalized * 0.01f;
+					distance = GetPointDistance(sp, bp);
+					sphere->SetPosition(sp.x, sp.y, sp.z);
+					bp = GetBoxPoint(sphere, cube);
+				}
 			}
 		}
 		else if (cube->m_fVelocity[0] != 0 || cube->m_fVelocity[1] != 0 || cube->m_fVelocity[2] != 0)
@@ -252,11 +300,14 @@ bool Sphere_Cube_Collide(CSphere *sphere, CCube *cube)
 			glm::vec3 normalized = glm::normalize(glm::vec3(cube->m_fVelocity[0], cube->m_fVelocity[1], cube->m_fVelocity[2]));
 			glm::vec3 sp = glm::vec3(sphere->m_fPosition[0], sphere->m_fPosition[1], sphere->m_fPosition[2]);
 			glm::vec3 cp = glm::vec3(box_point[0], box_point[1], box_point[2]);
-			while (sphere->m_dRadius - distance > -0.01f)
+			if (GetPointDistance(sp, cp - normalized * 0.01f) > distance)
 			{
-				distance = GetPointDistance(sp, cp);
-				cube->Translate(-normalized.x * 0.01f, -normalized.y * 0.01f, -normalized.z * 0.01f);
-				cp = GetBoxPoint(sphere, cube);
+				while (sphere->m_dRadius - distance >= 0.01f)
+				{
+					distance = GetPointDistance(sp, cp);
+					cube->Translate(-normalized.x * 0.01f, -normalized.y * 0.01f, -normalized.z * 0.01f);
+					cp = GetBoxPoint(sphere, cube);
+				}
 			}
 		}
 		return true;
@@ -277,17 +328,148 @@ bool Cube_Cube_Collide(CCube *cube1, CCube *cube2)
 		if (cube1->m_fVelocity[0] != 0 || cube1->m_fVelocity[1] != 0 || cube1->m_fVelocity[2] != 0)
 		{
 			glm::vec3 normalized = glm::normalize(glm::vec3(cube1->m_fVelocity[0], cube1->m_fVelocity[1], cube1->m_fVelocity[2]));
-			while (cube1->m_fScale[0] * 0.5f + cube2->m_fScale[0] * 0.5f - x_d > -0.01f &&
-				cube1->m_fScale[1] * 0.5f + cube2->m_fScale[1] * 0.5f - y_d > -0.01f &&
-				cube1->m_fScale[2] * 0.5f + cube2->m_fScale[2] * 0.5f - z_d > -0.01f)
+			glm::vec3 c1p = glm::vec3(cube1->m_fPosition[0], cube1->m_fPosition[1], cube1->m_fPosition[2]);
+			glm::vec3 c2p = glm::vec3(cube2->m_fPosition[0], cube2->m_fPosition[1], cube2->m_fPosition[2]);
+
+			if (GetPointDistance(c1p - normalized * 0.01f, c2p) > GetPointDistance(c1p, c2p))
 			{
-				cube1->Translate(-normalized.x * 0.01f, -normalized.y * 0.01f, -normalized.z * 0.01f);
-				x_d = abs(cube1->m_fPosition[0] - cube2->m_fPosition[0]);
-				y_d = abs(cube1->m_fPosition[1] - cube2->m_fPosition[1]);
-				z_d = abs(cube1->m_fPosition[2] - cube2->m_fPosition[2]);
+				while (cube1->m_fScale[0] * 0.5f + cube2->m_fScale[0] * 0.5f - x_d >= 0.01f &&
+					cube1->m_fScale[1] * 0.5f + cube2->m_fScale[1] * 0.5f - y_d >= 0.01f &&
+					cube1->m_fScale[2] * 0.5f + cube2->m_fScale[2] * 0.5f - z_d >= 0.01f)
+				{
+					cube1->Translate(-normalized.x * 0.01f, -normalized.y * 0.01f, -normalized.z * 0.01f);
+					x_d = abs(cube1->m_fPosition[0] - cube2->m_fPosition[0]);
+					y_d = abs(cube1->m_fPosition[1] - cube2->m_fPosition[1]);
+					z_d = abs(cube1->m_fPosition[2] - cube2->m_fPosition[2]);
+				}
+			}
+		}
+		else if(cube2->m_fVelocity[0] != 0 || cube2->m_fVelocity[1] != 0 || cube2->m_fVelocity[2] != 0)
+		{
+			glm::vec3 normalized = glm::normalize(glm::vec3(cube2->m_fVelocity[0], cube2->m_fVelocity[1], cube2->m_fVelocity[2]));
+			glm::vec3 c1p = glm::vec3(cube1->m_fPosition[0], cube1->m_fPosition[1], cube1->m_fPosition[2]);
+			glm::vec3 c2p = glm::vec3(cube2->m_fPosition[0], cube2->m_fPosition[1], cube2->m_fPosition[2]);
+
+			if (GetPointDistance(c2p - normalized * 0.01f, c2p) > GetPointDistance(c1p, c2p))
+			{
+				while (cube1->m_fScale[0] * 0.5f + cube2->m_fScale[0] * 0.5f - x_d >= 0.01f &&
+					cube1->m_fScale[1] * 0.5f + cube2->m_fScale[1] * 0.5f - y_d >= 0.01f &&
+					cube1->m_fScale[2] * 0.5f + cube2->m_fScale[2] * 0.5f - z_d >= 0.01f)
+				{
+					cube2->Translate(-normalized.x * 0.01f, -normalized.y * 0.01f, -normalized.z * 0.01f);
+					x_d = abs(cube1->m_fPosition[0] - cube2->m_fPosition[0]);
+					y_d = abs(cube1->m_fPosition[1] - cube2->m_fPosition[1]);
+					z_d = abs(cube1->m_fPosition[2] - cube2->m_fPosition[2]);
+				}
 			}
 		}
 		return true;
 	}
+	return false;
+}
+
+bool LineCollide2D(float l1[4], float l2[4]);
+bool LineCollide2D(float x1, float y1, float x2, float y2,
+	float x3, float y3, float x4, float y4);
+bool CObject::RayCast(float x1, float y1, float z1, float x2, float y2, float z2)
+{
+	return RayCast(x1, y1, z1, x2, y2, z2, this);
+}
+bool CObject::RayCast(float x1, float y1, float z1, float x2, float y2, float z2, CObject* object)
+{
+	CCube *cube;
+	CSphere *sphere;
+	CMan *man;
+	float line[6] = { x1, y1, z1, x2, y2, z2 };
+	bool collide = false;
+	if (object->m_type == CUBE || object->m_type == MAN)
+	{
+		if (object->m_type == MAN)
+		{
+			object->GetRealClass(sphere, cube, man);
+			object = man->m_Collider;
+		}
+		float rx, ry, rw, rh;
+		float pos[3] = { object->m_fPosition[0], object->m_fPosition[1], object->m_fPosition[2] };
+		float scale[3] = { object->m_fScale[0] / 2, object->m_fScale[1] / 2, object->m_fScale[2] / 2 };
+		rx = pos[0] - scale[0];
+		ry = pos[2] - scale[2];
+		rw = scale[0] * 2;
+		rh = scale[2] * 2;
+
+		bool top =
+			LineCollide2D(x1, z1, x2, z2, rx, ry, rx, ry + rh) ||
+			LineCollide2D(x1, z1, x2, z2, rx + rw, ry, rx + rw, ry + rh) ||
+			LineCollide2D(x1, z1, x2, z2, rx, ry, rx + rw, ry) ||
+			LineCollide2D(x1, z1, x2, z2, rx, ry + rh, rx + rw, ry + rh);
+
+		rx = pos[0] - scale[0];
+		ry = pos[1] - scale[1];
+		rw = scale[0] * 2;
+		rh = scale[1] * 2;
+		bool side =
+			LineCollide2D(x1, y1, x2, y2, rx, ry, rx, ry + rh) ||
+			LineCollide2D(x1, y1, x2, y2, rx + rw, ry, rx + rw, ry + rh) ||
+			LineCollide2D(x1, y1, x2, y2, rx, ry, rx + rw, ry) ||
+			LineCollide2D(x1, y1, x2, y2, rx, ry + rh, rx + rw, ry + rh);
+
+		return top && side;
+	}
+	else if (object->m_type == SPHERE)
+	{
+		float cx = object->m_fPosition[0];
+		float cy = object->m_fPosition[1];
+		float cz = object->m_fPosition[2];
+		float distX = x1 - x2;
+		float distY = y1 - y2;
+		float distZ = z1 - z2;
+		float len = sqrt(distX*distX + distY*distY + distZ*distZ);
+
+		float dot = ((cx - x1)*(x2 - x1) + ((cy - y1)*(y2 - y1)) + 
+			((cz - z1)*(z2 - z1))) / pow(len, 2);
+
+		float closestX = x1 + (dot * (x2 - x1));
+		float closestY = y1 + (dot * (y2 - y1));
+		float closestZ = z1 + (dot * (z2 - z1));
+
+		distX = closestX - cx;
+		distY = closestY - cy;
+		distZ = closestZ - cz;
+		float distance = sqrt(distX*distX + distY * distY + distZ * distZ);
+
+		object->GetRealClass(sphere, cube, man);
+		if (distance <= sphere->m_dRadius)
+			return true;
+		return false;
+
+	}
+	return false;
+}
+
+bool LineCollide2D(float l1[4], float l2[4])
+{
+	float uA =
+		((l2[2] - l2[0])*(l1[1] - l2[1]) - (l2[3] - l2[1])*(l1[0] - l2[0])) /
+		((l2[3] - l2[1])*(l1[2] - l1[0]) - (l2[2] - l2[0])*(l1[3] - l1[1]));
+
+	float uB = ((l1[2] - l1[0])*(l1[1] - l2[1]) - (l1[3] - l1[1])*(l1[0] - l2[0])) /
+		((l2[3] - l2[1])*(l1[2] - l1[0]) - (l2[2] - l2[0])*(l1[3] - l1[1]));
+
+	if (uA >= 0 && uA <= 1 && uB >= 0 && uB <= 1)
+		return true;
+	return false;
+}
+bool LineCollide2D(float x1, float y1, float x2, float y2,
+	float x3, float y3, float x4, float y4)
+{
+	float uA = ((x4 - x3)*(y1 - y3) - (y4 - y3)*(x1 - x3)) /
+		((y4 - y3)*(x2 - x1) - (x4 - x3)*(y2 - y1));
+
+	float uB = ((x2 - x1)*(y1 - y3) - (y2 - y1)*(x1 - x3)) /
+		((y4 - y3)*(x2 - x1) - (x4 - x3)*(y2 - y1));
+
+
+	if (uA >= 0 && uA <= 1 && uB >= 0 && uB <= 1)
+		return true;
 	return false;
 }

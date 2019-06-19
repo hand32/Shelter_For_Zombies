@@ -13,43 +13,6 @@ CCube::CCube(float *fPosition, float *fScale, float *fColor, float *fVelocity)
 
 CCube::~CCube() {}
 
-void CCube::RenderShadow()
-{
-	glViewport(0, 0, 1024, 1024);
-	CGLSLProgram* m_Glsl;
-	m_Glsl = &CGame::pInstance->m_Glsl[1];
-	LightInfo worldlight = CGame::pInstance->m_worldLight;
-	
-	glm::mat4 m_ProjectionMatrix = CGame::pInstance->m_ProjectionMatrix;
-	
-	glm::mat4 biasMatrix{
-		0.5, 0.0, 0.0, 0.0,
-		0.0, 0.5, 0.0, 0.0,
-		0.0, 0.0, 0.5, 0.0,
-		0.5, 0.5, 0.5, 1.0
-	};
-	glm::mat4 depthView =
-		glm::lookAt(glm::vec3(worldlight.Position),
-			glm::vec3(0., 0., 0.),
-			glm::vec3(0., 1., 0.));
-	glm::mat4 depthModel = glm::mat4(1.0f);
-	glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(m_fScale[0], m_fScale[1], m_fScale[2]));
-	glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), m_fAngle[0], glm::vec3(m_fAngle[1], m_fAngle[2], m_fAngle[3]));
-	glm::mat4 translate = glm::translate(glm::mat4(1.0f), glm::vec3(m_fPosition[0], m_fPosition[1], m_fPosition[2]));
-	depthModel = rotate * translate * scale * depthModel;
-
-	glm::mat4 depthProjection = m_ProjectionMatrix;
-	glm::mat4 depthMVP = m_ProjectionMatrix * depthView * depthModel;
-	m_Glsl->UniformMatrix4fv("depthMVP", &depthMVP[0][0]);
-	
-
-	//glViewport(0, 0, (CGame::pInstance->m_nW), CGame::pInstance->m_nH);
-	glBindVertexArray(CGame::pInstance->m_VaoHandle);
-	glDrawArrays(GL_TRIANGLES, (CGame::pInstance->m_nMan_VertexCnt + CGame::pInstance->m_nSphere_VertexCnt), CGame::pInstance->m_nCube_VertexCnt);
-	glBindVertexArray(0);
-
-}
-
 void CCube::RenderScene()
 {
 	glViewport(0, 0, CGame::pInstance->m_nW, CGame::pInstance->m_nH);
@@ -68,7 +31,7 @@ void CCube::RenderScene()
 	glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(m_fScale[0], m_fScale[1], m_fScale[2]));
 	glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), m_fAngle[0], glm::vec3(m_fAngle[1], m_fAngle[2], m_fAngle[3]));
 	glm::mat4 translate = glm::translate(glm::mat4(1.0f), glm::vec3(m_fPosition[0], m_fPosition[1], m_fPosition[2]));
-	Model = rotate * translate * scale * Model;
+	Model = translate * rotate * scale * Model;
 
 	glm::mat4 MV = m_View * Model;
 	glm::mat4 m_Mvp;
@@ -88,11 +51,10 @@ void CCube::RenderScene()
 			glm::vec3(0., 0., 0.),
 			glm::vec3(0., 1., 0.));
 	glm::mat4 depthModel = glm::mat4(1.0f);
-	depthModel = rotate * translate * scale * depthModel;
-	glm::mat4 depthProjection = m_ProjectionMatrix;
-	glm::mat4 depthMVP = m_ProjectionMatrix * depthView * depthModel;
+	depthModel = translate * rotate * scale * depthModel;
+	glm::mat4 depthProjection = CGame::pInstance->m_DepthProjectionMatrix;
+	glm::mat4 depthMVP = depthProjection * depthView * depthModel;
 	glm::mat4 depthBiasMVP = biasMatrix * depthMVP;
-	//glViewport(0, 0, (CGame::pInstance->m_nW), CGame::pInstance->m_nH);
 	m_Glsl->UniformMatrix4fv("MVP", &m_Mvp[0][0]);
 	m_Glsl->UniformMatrix4fv("ProjectionMatrix", &m_ProjectionMatrix[0][0]);
 	m_Glsl->UniformMatrix4fv("ModelViewMatrix", &MV[0][0]);
@@ -108,6 +70,7 @@ void CCube::RenderScene()
 	m_Glsl->Uniform3f("Light.Ls", worldlight.Ls[0], worldlight.Ls[1], worldlight.Ls[2]);
 	m_Glsl->Uniform1f("Material.Shininess", material.shininess);
 	m_Glsl->UniformMatrix4fv("DepthBiasMVP", &depthBiasMVP[0][0]);
+
 	GLuint ShadowMapID = glGetUniformLocation(m_Glsl->m_Handle, "shadowMap");
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, CGame::pInstance->m_depthTexture);
@@ -121,4 +84,40 @@ void CCube::RenderScene()
 void CCube::GetRealClass(CSphere*& sphere, CCube*& cube, CMan*& man)
 {
 	cube = this;
+}
+
+
+void CCube::RenderShadow()
+{
+	glViewport(0, 0, CGame::pInstance->m_shadowW, CGame::pInstance->m_shadowH);
+	CGLSLProgram* m_Glsl;
+	m_Glsl = &CGame::pInstance->m_Glsl[1];
+	LightInfo worldlight = CGame::pInstance->m_worldLight;
+
+	glm::mat4 biasMatrix{
+		0.5, 0.0, 0.0, 0.0,
+		0.0, 0.5, 0.0, 0.0,
+		0.0, 0.0, 0.5, 0.0,
+		0.5, 0.5, 0.5, 1.0
+	};
+	glm::mat4 depthView =
+		glm::lookAt(glm::vec3(worldlight.Position),
+			glm::vec3(0., 0., 0.),
+			glm::vec3(0., 1., 0.));
+	glm::mat4 depthModel = glm::mat4(1.0f);
+	glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(m_fScale[0], m_fScale[1], m_fScale[2]));
+	glm::mat4 rotate = glm::rotate(glm::mat4(1.0f), m_fAngle[0], glm::vec3(m_fAngle[1], m_fAngle[2], m_fAngle[3]));
+	glm::mat4 translate = glm::translate(glm::mat4(1.0f), glm::vec3(m_fPosition[0], m_fPosition[1], m_fPosition[2]));
+	depthModel = rotate * translate * scale * depthModel;
+
+	glm::mat4 depthProjection = CGame::pInstance->m_DepthProjectionMatrix;
+		glm::mat4 depthMVP = depthProjection * depthView * depthModel;
+	m_Glsl->UniformMatrix4fv("depthMVP", &depthMVP[0][0]);
+
+
+	//glViewport(0, 0, (CGame::pInstance->m_nW), CGame::pInstance->m_nH);
+	glBindVertexArray(CGame::pInstance->m_VaoHandle);
+	glDrawArrays(GL_TRIANGLES, (CGame::pInstance->m_nMan_VertexCnt + CGame::pInstance->m_nSphere_VertexCnt), CGame::pInstance->m_nCube_VertexCnt);
+	glBindVertexArray(0);
+
 }
